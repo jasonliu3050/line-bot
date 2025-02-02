@@ -1,0 +1,25 @@
+# 忽略系統和個人檔案
+*.log
+*.ini
+*.dat
+*.regtrans-ms
+*.blf
+*.pyc
+.DS_Store
+
+# 忽略 Windows 特定目錄
+Application Data/
+Cookies/
+Local Settings/
+My Documents/
+NetHood/
+PrintHood/
+Recent/
+SendTo/
+Templates/
+「開始」功能表/
+
+# 忽略 VSCode、Python 和 IDE 設定檔案
+__pycache__/
+.vscode/
+.idea/
