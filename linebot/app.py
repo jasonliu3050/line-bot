@@ -22,6 +22,11 @@ line_bot_api = MessagingApi(Configuration)  # ✅ 修正：移除 `configuration
 
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
+@app.route("/", methods=["GET"])
+def home():
+    return "Hello, this is my LINE bot server!"
+
+
 @app.route("/callback", methods=['POST'])
 def callback():
     """處理 LINE 傳來的 Webhook 事件"""
@@ -49,3 +54,9 @@ def handle_message(event):
 # 啟動 Flask 伺服器
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # 获取 Render 提供的 PORT 环境变量
+    app.run(host="0.0.0.0", port=port)
+
