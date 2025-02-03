@@ -14,7 +14,8 @@ app = Flask(__name__)
 
 # 設定 LINE Messaging API
 config = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-line_bot_api = MessagingApi(configuration=config)
+line_bot_api = MessagingApi(Configuration)  # ✅ 修正：移除 `configuration=config`
+
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 @app.route("/callback", methods=['POST'])
