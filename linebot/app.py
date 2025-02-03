@@ -45,7 +45,7 @@ def handle_message(event):
     # 回覆訊息
     line_bot_api.reply_message(
         event.reply_token,
-        [TextMessage(text=reply_message)]
+        [TextSendMessage(text=reply_message)]
     )
 
 if __name__ == "__main__":
