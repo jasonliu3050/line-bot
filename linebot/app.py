@@ -1,5 +1,5 @@
 from flask import Flask, request, abort
-from linebot.v3.messaging import MessagingApi, Configuration
+from linebot.v3.messaging import MessagingApi
 from linebot.v3.webhook import WebhookHandler, MessageEvent
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
@@ -17,8 +17,7 @@ if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_CHANNEL_SECRET:
 app = Flask(__name__)
 
 # 初始化 LINE Messaging API
-config = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-line_bot_api = MessagingApi(configuration=config)
+line_bot_api = MessagingApi(LINE_CHANNEL_ACCESS_TOKEN)
 
 # 初始化 WebhookHandler
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
