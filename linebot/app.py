@@ -238,25 +238,31 @@ def handle_postback(event):
 
 def send_meat_menu(event, selected_main):
     """發送肉類選擇菜單（對應 Taco 或 Taco Bowl）"""
-    print(f"發送肉類選單給用戶，主餐: {selected_main}")  # **DEBUG LOG**
+    print(f"[DEBUG] 發送肉類選單給用戶，主餐: {selected_main}")  # **DEBUG LOG**
     
-    carousel_template = CarouselTemplate(columns=[
-        CarouselColumn(
-            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
-            title=f"選擇 {selected_main} 的肉類",
-            text="請選擇你想要的肉類",
-            actions=[
-                PostbackAction(label="雞肉", data="肉_雞肉"),
-                PostbackAction(label="牛肉", data="肉_牛肉"),
-                PostbackAction(label="豬肉", data="肉_豬肉"),
-            ]
-        )
-    ])
+    try:
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 確保圖片 URL 可用
+                title=f"選擇 {selected_main} 的肉類",
+                text="請選擇你想要的肉類：",
+                actions=[
+                    PostbackAction(label="雞肉", data="肉_雞肉"),
+                    PostbackAction(label="牛肉", data="肉_牛肉"),
+                    PostbackAction(label="豬肉", data="肉_豬肉"),
+                ]
+            )
+        ])
 
-    line_bot_api.reply_message(
-        event.reply_token,
-        [TemplateSendMessage(alt_text="請選擇肉類", template=carousel_template)]
-    )
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TemplateSendMessage(alt_text="請選擇肉類", template=carousel_template)]
+        )
+
+    except Exception as e:
+        print(f"[ERROR] 發送肉類選單時出現錯誤: {e}")  # **輸出錯誤資訊**
+
+
 
 
 
