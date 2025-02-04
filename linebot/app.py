@@ -147,7 +147,6 @@ def send_menu(event):
 
 
 
-
 @handler.add(PostbackEvent)
 def handle_postback(event):
     try:
@@ -165,7 +164,7 @@ def handle_postback(event):
         # **主餐選擇**
         if postback_data.startswith("主餐_"):
             selected_main = postback_data.replace("主餐_", "")
-            valid_mains = ["Taco", "TacoBowl"]  # 確保這裡的名稱和你的選單一致
+            valid_mains = ["Taco", "TacoBowl"]
             
             if selected_main not in valid_mains:
                 print(f"[ERROR] 選擇的主餐 {selected_main} 不在菜單內！")
@@ -205,20 +204,20 @@ def handle_postback(event):
         # **醬料選擇**
         elif postback_data.startswith("醬料_"):
             selected_sauce = postback_data.replace("醬料_", "")
-
+            
             if not user_cart[user_id]["current_item"]:
                 print("[ERROR] current_item 未初始化，無法選擇醬料！")
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請重新點餐。"))
                 return
-
+            
             if "醬料" not in user_cart[user_id]["current_item"]:
                 user_cart[user_id]["current_item"]["醬料"] = []
-
-            if selected_sauce not in menu["醬汁"]:
+            
+            if selected_sauce not in menu.get("醬汁", {}):
                 print(f"[ERROR] 選擇的醬料 {selected_sauce} 不在菜單內！")
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text="此醬料無效，請重新選擇。"))
                 return
-
+            
             user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
             print(f"[DEBUG] 用戶選擇醬料: {selected_sauce}")
             send_quantity_menu(event)
