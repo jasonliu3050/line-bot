@@ -98,8 +98,8 @@ def send_menu(event):
             title="選擇你的主餐",
             text="請選擇 Taco 或 Taco Bowl",
             actions=[
-                PostbackAction(label="Taco", data="選擇_Taco"),
-                PostbackAction(label="Taco Bowl", data="選擇_TacoBowl")
+                PostbackAction(label="Taco", data="主餐_Taco"),
+                PostbackAction(label="Taco Bowl", data="主餐_TacoBowl")
             ]
         )
     ])
@@ -114,37 +114,53 @@ def send_menu(event):
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
-    """處理 Postback 事件"""
     user_id = event.source.user_id
     postback_data = event.postback.data
 
-    # 記錄購物車（初始化）
+    # 初始化用戶購物車（每次點餐開始）
     if user_id not in user_cart:
-        user_cart[user_id] = []
+        user_cart[user_id] = {"items": []}  # 訂單格式：{"items": [{"主餐": "Taco", "肉類": "雞肉", "配料": ["香菜"], "數量": 1}]}
 
-    # 第一層：選擇主餐
-    if postback_data.startswith("選擇_"):
-        selected_main = postback_data.replace("選擇_", "")
-        user_cart[user_id].append(selected_main)
+    # 主餐選擇
+    if postback_data.startswith("主餐_"):
+        selected_main = postback_data.replace("主餐_", "")
+        user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "數量": None}
 
-        # 發送肉類選擇菜單
         send_meat_menu(event, selected_main)
 
-    # 第二層：選擇肉類
+    # 肉類選擇
     elif postback_data.startswith("肉_"):
         selected_meat = postback_data.replace("肉_", "")
-        user_cart[user_id].append(selected_meat)
+        user_cart[user_id]["current_item"]["肉類"] = selected_meat
 
-        # 發送配料選單
         send_toppings_menu(event)
 
-    # 第三層：選擇配料
+    # 配料選擇
     elif postback_data.startswith("配料_"):
         selected_topping = postback_data.replace("配料_", "")
-        user_cart[user_id].append(selected_topping)
+        user_cart[user_id]["current_item"]["配料"].append(selected_topping)
 
-        reply_text = f"你已加入 {selected_topping}！目前購物車內容：{', '.join(user_cart[user_id])}"
+        # 提供數量選擇選單
+        send_quantity_menu(event)
+
+    # 數量選擇
+    elif postback_data.startswith("數量_"):
+        selected_quantity = int(postback_data.replace("數量_", ""))
+        user_cart[user_id]["current_item"]["數量"] = selected_quantity
+
+        # 儲存完成的訂單項目
+        user_cart[user_id]["items"].append(user_cart[user_id].pop("current_item"))
+
+        # 回饋完成的訂單
+        current_item = user_cart[user_id]["items"][-1]
+        reply_text = (
+            f"你已完成一份訂單：\n"
+            f"{current_item['數量']} 份 {current_item['主餐']}，肉類：{current_item['肉類']}，"
+            f"配料：{', '.join(current_item['配料'])}\n"
+            f"目前購物車有 {len(user_cart[user_id]['items'])} 筆訂單。"
+        )
         line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+
 
 
 def send_meat_menu(event, selected_main):
@@ -187,6 +203,57 @@ def send_toppings_menu(event):
         event.reply_token,
         [TemplateSendMessage(alt_text="請選擇配料", template=carousel_template)]
     )
+
+
+def checkout_order(event, user_id):
+    """結帳功能，顯示完整訂單與總金額"""
+    if user_id not in user_cart or not user_cart[user_id]["items"]:
+        reply_text = "你的購物車是空的，請先點餐！"
+    else:
+        order_details = ""
+        total = 0
+        for item in user_cart[user_id]["items"]:
+            item_total = menu[item["主餐"]] * item["數量"] + sum(menu[topping] for topping in item["配料"])
+            total += item_total
+            order_details += (
+                f"{item['數量']} 份 {item['主餐']}，肉類：{item['肉類']}，"
+                f"配料：{', '.join(item['配料'])}，小計：{item_total} 元\n"
+            )
+
+        discount = 0.9 if total >= 200 else 1.0
+        final_price = int(total * discount)
+        reply_text = (
+            f"你的訂單如下：\n{order_details}"
+            f"總金額：{total} 元\n折扣後金額：{final_price} 元\n"
+            f"請使用以下 Line Pay 付款連結：\nhttps://pay.line.me/123456789"
+        )
+
+        # 清空購物車
+        user_cart[user_id]["items"] = []
+
+    line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+
+
+@handler.add(MessageEvent)
+def handle_message(event):
+    user_id = event.source.user_id
+    user_message = event.message.text.strip()
+
+    if user_message == "我要點餐":
+        send_menu(event)
+    elif user_message == "查看購物車":
+        items = user_cart.get(user_id, {}).get("items", [])
+        if items:
+            cart_details = "\n".join(
+                [f"{item['數量']} 份 {item['主餐']}，肉類：{item['肉類']}，配料：{', '.join(item['配料'])}" for item in items]
+            )
+            reply_text = f"你的購物車內有：\n{cart_details}"
+        else:
+            reply_text = "你的購物車是空的，請輸入『我要點餐』來開始點餐！"
+        line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+    elif user_message == "結帳":
+        checkout_order(event, user_id)
+
 
 
 
