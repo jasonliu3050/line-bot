@@ -75,5 +75,17 @@ def handle_message(event):
     user_message = event.message.text  # 取得使用者發送的文字
     reply_message = f"你說了：{user_message}"
 
+@HANDLER.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    user_message = event.message.text.strip()  # 接收用戶訊息
+    reply_text = "你好，請問你需要什麼服務？"  # 預設回覆
+    
+    try:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+    except Exception as e:
+        print(f"回覆訊息時出現錯誤：{e}")
 
 
