@@ -165,7 +165,9 @@ def handle_postback(event):
         # **主餐選擇**
         if postback_data.startswith("主餐_"):
             selected_main = postback_data.replace("主餐_", "")
-            if selected_main not in menu["主餐"]:
+            valid_mains = ["Taco", "TacoBowl"]  # 確保這裡的名稱和你的選單一致
+            
+            if selected_main not in valid_mains:
                 print(f"[ERROR] 選擇的主餐 {selected_main} 不在菜單內！")
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text="此主餐無效，請重新選擇。"))
                 return
@@ -245,6 +247,7 @@ def handle_postback(event):
         line_bot_api.reply_message(
             event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")]
         )
+
 
 
 
