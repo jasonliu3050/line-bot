@@ -21,7 +21,6 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
-# 設定商品價格表
 menu = {
     "雞肉Taco": 100,
     "牛肉Taco": 120,
@@ -29,11 +28,13 @@ menu = {
     "香菜": 10,
     "酪梨醬": 20,
     "紅椒醬": 20,
+    "莎莎醬": 15,
     "玉米脆片": 50,
     "墨西哥風味飯": 60,
     "咖啡": 40,
     "紅茶": 35
 }
+
 
 # 用戶購物車
 user_cart = {}
