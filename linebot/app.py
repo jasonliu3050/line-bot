@@ -203,9 +203,9 @@ def handle_postback(event):
     
     # 確保 current_item 存在
             if user_id not in user_cart or "current_item" not in user_cart[user_id] or not user_cart[user_id]["current_item"]:
-            print("[ERROR] current_item 未初始化，無法選擇醬料！")
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請重新開始點餐！")])
-            return
+                print("[ERROR] current_item 未初始化，無法選擇醬料！")
+                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請重新開始點餐！")])
+                return
 
     # 添加醬料
             user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
