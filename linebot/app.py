@@ -165,7 +165,18 @@ def handle_postback(event):
         # **主餐選擇**
         if postback_data.startswith("主餐_"):
             selected_main = postback_data.replace("主餐_", "")
-            user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "醬料": [], "數量": None}
+            if selected_main not in menu["主餐"]:
+                print(f"[ERROR] 選擇的主餐 {selected_main} 不在菜單內！")
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="此主餐無效，請重新選擇。"))
+                return
+            
+            user_cart[user_id]["current_item"] = {
+                "主餐": selected_main,
+                "肉類": None,
+                "配料": [],
+                "醬料": [],
+                "數量": None
+            }
             print(f"[DEBUG] 用戶選擇主餐: {selected_main}")
             send_meat_menu(event, selected_main)
 
@@ -239,7 +250,6 @@ def handle_postback(event):
 
 
 
-
 def send_meat_menu(event, selected_main):
     """發送肉類選擇菜單（對應 Taco 或 Taco Bowl）"""
     print(f"[DEBUG] 發送肉類選單給用戶，主餐: {selected_main}")  # **DEBUG LOG**
@@ -265,7 +275,10 @@ def send_meat_menu(event, selected_main):
 
     except Exception as e:
         print(f"[ERROR] 發送肉類選單時出現錯誤: {e}")  # **輸出錯誤資訊**
-
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextSendMessage(text="發送肉類選單時發生錯誤，請稍後再試！")]
+        )
 
 
 
