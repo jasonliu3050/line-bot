@@ -89,11 +89,12 @@ def handle_message(event):
 
     line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
 
+
 def send_menu(event):
     """發送圖文菜單"""
     carousel_template = CarouselTemplate(columns=[
         CarouselColumn(
-            thumbnail_image_url="https://example.com/chicken_taco.jpg",
+            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 正确的 Imgur 图片 URL
             title="選擇 Taco",
             text="請選擇你的 Taco 口味",
             actions=[
@@ -108,6 +109,8 @@ def send_menu(event):
         event.reply_token,
         [TemplateSendMessage(alt_text="請選擇餐點", template=carousel_template)]
     )
+
+
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
