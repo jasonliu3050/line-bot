@@ -1,9 +1,8 @@
 from flask import Flask, request, abort
-from linebot.v3.messaging import MessagingApi
+from linebot.v3.messaging import MessagingApi, TextMessage, TextSendMessage
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import MessageEvent, PostbackEvent
-from linebot.v3.messaging.messages import TextMessage, TextSendMessage
 from linebot.v3.messaging.templates import TemplateSendMessage, CarouselTemplate, CarouselColumn
 from linebot.v3.messaging.actions import PostbackAction
 import os
@@ -155,5 +154,4 @@ def handle_postback(event):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
 
