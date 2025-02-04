@@ -56,3 +56,55 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
 
+
+
+
+
+from flask import Flask, request, abort
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
+
+app = Flask(__name__)
+
+# 請將以下兩行替換為你的 LINE Bot Token 和 Secret
+LINE_BOT_API = "你的 Channel Access Token"
+HANDLER = WebhookHandler("你的 Channel Secret")
+
+line_bot_api = LineBotApi(LINE_BOT_API)
+
+@app.route("/callback", methods=["POST"])
+def callback():
+    # 獲取 LINE 傳來的 X-Line-Signature
+    signature = request.headers["X-Line-Signature"]
+    body = request.get_data(as_text=True)
+
+    try:
+        HANDLER.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+
+    return "OK"
+
+# 當接收到文字訊息時觸發
+@HANDLER.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    # 獲取用戶傳送的訊息
+    user_message = event.message.text.lower().strip()  # 將訊息轉為小寫並去掉空格
+
+    # 檢查用戶訊息是否為 "hello"
+    if user_message == "hello":
+        reply_text = "你好，請問你需要什麼服務？"
+    else:
+        reply_text = "抱歉，我不明白你的需求。"
+
+    # 回覆用戶訊息
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=reply_text)
+    )
+
+if __name__ == "__main__":
+    app.run(port=5000, debug=True)
+
+
