@@ -95,30 +95,40 @@ def handle_message(event):
 
 def send_menu(event):
     """發送主選單（獨立的 Taco 和 Taco Bowl 選單）"""
-    carousel_template = CarouselTemplate(columns=[
-        CarouselColumn(
-            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
-            title="Taco",
-            text="請選擇 Taco 作為主餐",
-            actions=[
-                PostbackAction(label="選擇 Taco", data="主餐_Taco")
-            ]
-        ),
-        CarouselColumn(
-            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
-            title="Taco Bowl",
-            text="請選擇 Taco Bowl 作為主餐",
-            actions=[
-                PostbackAction(label="選擇 Taco Bowl", data="主餐_TacoBowl")
-            ]
-        )
-    ])
+    print("[DEBUG] 發送主選單")  # DEBUG LOG
+    
+    try:
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+                title="Taco",
+                text="請選擇 Taco 作為主餐",
+                actions=[
+                    PostbackAction(label="選擇 Taco", data="主餐_Taco")
+                ]
+            ),
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+                title="Taco Bowl",
+                text="請選擇 Taco Bowl 作為主餐",
+                actions=[
+                    PostbackAction(label="選擇 Taco Bowl", data="主餐_TacoBowl")
+                ]
+            )
+        ])
 
-    print("Sending menu to user")
-    line_bot_api.reply_message(
-        event.reply_token,
-        [TemplateSendMessage(alt_text="請選擇主餐", template=carousel_template)]
-    )
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TemplateSendMessage(alt_text="請選擇主餐", template=carousel_template)]
+        )
+        print("[DEBUG] 主選單發送成功")
+
+    except Exception as e:
+        print(f"[ERROR] 發送主選單時發生錯誤: {e}")
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextSendMessage(text="發送主選單時發生錯誤，請稍後再試！")]
+        )
 
 
 
