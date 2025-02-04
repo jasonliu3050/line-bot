@@ -1,3 +1,6 @@
+import sys
+print(sys.path)
+
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import (
