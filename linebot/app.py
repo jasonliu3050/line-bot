@@ -298,13 +298,22 @@ def checkout_order(event, user_id):
         order_details = ""
         total = 0
         for item in user_cart[user_id]["items"]:
-            item_total = menu[item["主餐"]] * item["數量"] + sum(menu[topping] for topping in item["配料"])
+            # 主餐价格
+            item_total = menu[item["主餐"]] * item["數量"]
+            
+            # 加入配料价格
+            item_total += sum(menu.get(topping, 0) for topping in item["配料"])
+            
+            # 加入醬料价格
+            item_total += sum(menu.get(sauce, 0) for sauce in item["醬料"])
+            
             total += item_total
             order_details += (
                 f"{item['數量']} 份 {item['主餐']}，肉類：{item['肉類']}，"
-                f"配料：{', '.join(item['配料'])}，小計：{item_total} 元\n"
+                f"配料：{', '.join(item['配料'])}，醬料：{', '.join(item['醬料'])}，小計：{item_total} 元\n"
             )
 
+        # 折扣处理
         discount = 0.9 if total >= 200 else 1.0
         final_price = int(total * discount)
         reply_text = (
@@ -317,7 +326,6 @@ def checkout_order(event, user_id):
         user_cart[user_id]["items"] = []
 
     line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
-
 
 
 
