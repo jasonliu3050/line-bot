@@ -90,6 +90,8 @@ def handle_message(event):
     line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
 
 
+
+
 def send_menu(event):
     """發送主選單（獨立的 Taco 和 Taco Bowl 選單）"""
     carousel_template = CarouselTemplate(columns=[
@@ -111,6 +113,7 @@ def send_menu(event):
         )
     ])
 
+    print("Sending menu to user")
     line_bot_api.reply_message(
         event.reply_token,
         [TemplateSendMessage(alt_text="請選擇主餐", template=carousel_template)]
@@ -120,54 +123,54 @@ def send_menu(event):
 
 
 
+
 @handler.add(PostbackEvent)
 def handle_postback(event):
-    user_id = event.source.user_id
-    postback_data = event.postback.data
+    try:
+        user_id = event.source.user_id
+        postback_data = event.postback.data
 
-    # 初始化用戶購物車（每次點餐開始）
-    if user_id not in user_cart:
-        user_cart[user_id] = {"items": []}  # 訂單格式：{"items": [{"主餐": "Taco", "肉類": "雞肉", "配料": ["香菜"], "數量": 1}]}
+        # 調試日誌
+        print(f"Postback data received: {postback_data}")
 
-    # 主餐選擇
-    if postback_data.startswith("主餐_"):
-        selected_main = postback_data.replace("主餐_", "")
-        user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "數量": None}
+        # 主餐選擇
+        if postback_data.startswith("主餐_"):
+            selected_main = postback_data.replace("主餐_", "")
+            user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "數量": None}
 
-        send_meat_menu(event, selected_main)
+            print(f"User selected main dish: {selected_main}")
+            send_meat_menu(event, selected_main)
+        elif postback_data.startswith("肉_"):
+            selected_meat = postback_data.replace("肉_", "")
+            user_cart[user_id]["current_item"]["肉類"] = selected_meat
 
-    # 肉類選擇
-    elif postback_data.startswith("肉_"):
-        selected_meat = postback_data.replace("肉_", "")
-        user_cart[user_id]["current_item"]["肉類"] = selected_meat
+            print(f"User selected meat: {selected_meat}")
+            send_toppings_menu(event)
+        elif postback_data.startswith("配料_"):
+            selected_topping = postback_data.replace("配料_", "")
+            user_cart[user_id]["current_item"]["配料"].append(selected_topping)
 
-        send_toppings_menu(event)
+            print(f"User selected topping: {selected_topping}")
+            send_quantity_menu(event)
+        elif postback_data.startswith("數量_"):
+            selected_quantity = int(postback_data.replace("數量_", ""))
+            user_cart[user_id]["current_item"]["數量"] = selected_quantity
 
-    # 配料選擇
-    elif postback_data.startswith("配料_"):
-        selected_topping = postback_data.replace("配料_", "")
-        user_cart[user_id]["current_item"]["配料"].append(selected_topping)
+            # 儲存完成的訂單項目
+            user_cart[user_id]["items"].append(user_cart[user_id].pop("current_item"))
 
-        # 提供數量選擇選單
-        send_quantity_menu(event)
-
-    # 數量選擇
-    elif postback_data.startswith("數量_"):
-        selected_quantity = int(postback_data.replace("數量_", ""))
-        user_cart[user_id]["current_item"]["數量"] = selected_quantity
-
-        # 儲存完成的訂單項目
-        user_cart[user_id]["items"].append(user_cart[user_id].pop("current_item"))
-
-        # 回饋完成的訂單
-        current_item = user_cart[user_id]["items"][-1]
-        reply_text = (
-            f"你已完成一份訂單：\n"
-            f"{current_item['數量']} 份 {current_item['主餐']}，肉類：{current_item['肉類']}，"
-            f"配料：{', '.join(current_item['配料'])}\n"
-            f"目前購物車有 {len(user_cart[user_id]['items'])} 筆訂單。"
-        )
-        line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+            # 回饋完成的訂單
+            current_item = user_cart[user_id]["items"][-1]
+            reply_text = (
+                f"你已完成一份訂單：\n"
+                f"{current_item['數量']} 份 {current_item['主餐']}，肉類：{current_item['肉類']}，"
+                f"配料：{', '.join(current_item['配料'])}\n"
+                f"目前購物車有 {len(user_cart[user_id]['items'])} 筆訂單。"
+            )
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+    except Exception as e:
+        print(f"Error in handle_postback: {e}")
+        line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")])
 
 
 
