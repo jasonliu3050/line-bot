@@ -290,28 +290,32 @@ def send_toppings_menu(event):
 
 def send_sauce_menu(event):
     """發送醬料選擇菜單"""
-    print("發送醬料選單")  # **DEBUG LOG**
+    print("[DEBUG] 發送醬料選單")  # DEBUG LOG
     
-    carousel_template = CarouselTemplate(columns=[
-        CarouselColumn(
-            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
-            title="選擇你的醬料",
-            text="請選擇你想加的醬料",
-            actions=[
-                PostbackAction(label="紅椒醬 (+$20)", data="醬料_紅椒醬"),
-                PostbackAction(label="酪梨醬 (+$20)", data="醬料_酪梨醬"),
-                PostbackAction(label="莎莎醬 (+$15)", data="醬料_莎莎醬"),
-            ]
-        )
-    ])
-
     try:
+        # 構建 CarouselTemplate
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 確保圖片可用
+                title="選擇你的醬料",
+                text="請選擇你想加的醬料：",
+                actions=[
+                    PostbackAction(label="紅椒醬 (+$20)", data="醬料_紅椒醬"),
+                    PostbackAction(label="酪梨醬 (+$20)", data="醬料_酪梨醬"),
+                    PostbackAction(label="莎莎醬 (+$15)", data="醬料_莎莎醬"),
+                ]
+            )
+        ])
+        
+        # 發送消息
         line_bot_api.reply_message(
             event.reply_token,
             [TemplateSendMessage(alt_text="請選擇醬料", template=carousel_template)]
         )
+
     except Exception as e:
-        print(f"Error sending sauce menu: {e}")  # **DEBUG LOG**
+        # 捕獲並打印錯誤信息
+        print(f"[ERROR] 發送醬料選單時出現錯誤: {e}")  # DEBUG LOG
 
 
 
