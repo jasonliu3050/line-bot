@@ -1,4 +1,4 @@
-import sys
+import sys 
 print(sys.path)
 
 from flask import Flask, request, abort
@@ -20,19 +20,42 @@ LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-
+# 完整分類菜單
 menu = {
-    "雞肉Taco": 100,
-    "牛肉Taco": 120,
-    "豬肉Taco": 110,
-    "香菜": 10,
-    "酪梨醬": 20,
-    "紅椒醬": 20,
-    "莎莎醬": 15,
-    "玉米脆片": 50,
-    "墨西哥風味飯": 60,
-    "咖啡": 40,
-    "紅茶": 35
+    "主餐": {
+        "雞肉Taco": 100,
+        "牛肉Taco": 120,
+        "豬肉Taco": 110,
+        "雞肉Taco Bowl": 130,
+        "牛肉Taco Bowl": 150,
+        "豬肉Taco Bowl": 140
+    },
+    "配料": {
+        "香菜": 10,
+        "洋蔥": 10,
+        "番茄": 10,
+        "生菜": 10,
+        "玉米": 15
+    },
+    "醬汁": {
+        "莎莎醬": 15,
+        "酪梨醬": 20,
+        "紅椒醬": 20,
+        "酸奶醬": 15
+    },
+    "點心": {
+        "玉米脆片": 50,
+        "墨西哥風味飯": 60,
+        "起司棒": 55,
+        "炸薯條": 45
+    },
+    "飲料": {
+        "咖啡": 40,
+        "紅茶": 35,
+        "柳橙汁": 45,
+        "可樂": 30,
+        "檸檬水": 25
+    }
 }
 
 
