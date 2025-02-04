@@ -200,11 +200,23 @@ def handle_postback(event):
         # **醬料選擇**
         elif postback_data.startswith("醬料_"):
             selected_sauce = postback_data.replace("醬料_", "")
-            if not user_cart[user_id]["current_item"]:
-                raise ValueError("[ERROR] current_item 未初始化，無法選擇醬料！")
+    
+    # 確保 current_item 存在
+            if user_id not in user_cart or "current_item" not in user_cart[user_id] or not user_cart[user_id]["current_item"]:
+            print("[ERROR] current_item 未初始化，無法選擇醬料！")
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請重新開始點餐！")])
+            return
+
+    # 添加醬料
             user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
             print(f"[DEBUG] 用戶選擇醬料: {selected_sauce}")
-            send_quantity_menu(event)
+    
+    # 檢查是否達到三種醬料上限
+            if len(user_cart[user_id]["current_item"]["醬料"]) >= 3:
+            send_quantity_menu(event)  # 進入數量選擇
+            else:
+            send_sauce_menu(event)  # 允許繼續選擇醬料
+
 
         # **數量選擇**
         elif postback_data.startswith("數量_"):
