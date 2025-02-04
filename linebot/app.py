@@ -1,10 +1,11 @@
 from flask import Flask, request, abort
-from linebot.v3.messaging import MessagingApi, TextMessage, TextSendMessage
+from linebot.v3.messaging import MessagingApi
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import MessageEvent, PostbackEvent
-from linebot.v3.messaging import TemplateSendMessage
-from linebot.v3.models import CarouselTemplate, CarouselColumn, PostbackAction
+from linebot.v3.messaging.messages import TextMessage, TextSendMessage
+from linebot.v3.messaging.templates import TemplateSendMessage, CarouselTemplate, CarouselColumn
+from linebot.v3.messaging.actions import PostbackAction
 import os
 
 app = Flask(__name__)
