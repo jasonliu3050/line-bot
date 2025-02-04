@@ -32,7 +32,7 @@ menu = {
     "紅茶": 35
 }
 
-# 模擬用戶購物車
+# 用戶購物車
 user_cart = {}
 
 @app.route("/", methods=["GET"])
@@ -57,23 +57,19 @@ def handle_message(event):
     user_id = event.source.user_id
     user_message = event.message.text.strip()
 
-    # 初始化購物車
     if user_id not in user_cart:
         user_cart[user_id] = []
 
-    # 發送菜單
     if user_message == "我要點餐":
         send_menu(event)
         return
 
-    # 查看購物車
     elif user_message == "查看購物車":
         if user_cart[user_id]:
             reply_text = f"你的購物車內有：{', '.join(user_cart[user_id])}"
         else:
             reply_text = "你的購物車是空的，請輸入『我要點餐』來開始點餐！"
 
-    # 結帳
     elif user_message == "結帳":
         if not user_cart[user_id]:
             reply_text = "你的購物車是空的，請先點餐！"
@@ -81,9 +77,7 @@ def handle_message(event):
             total = sum(menu[item] for item in user_cart[user_id])
             discount = 0.9 if total >= 200 else 1.0
             final_price = int(total * discount)
-
             user_cart[user_id] = []
-
             reply_text = f"總金額為 {total} 元，折扣後金額：{final_price} 元\n請使用以下 Line Pay 付款連結：\nhttps://pay.line.me/123456789"
 
     else:
