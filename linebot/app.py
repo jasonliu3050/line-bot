@@ -1,7 +1,10 @@
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models import (
+    MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage, ButtonsTemplate,
+    CarouselTemplate, CarouselColumn, PostbackAction
+)
 import os
 
 app = Flask(__name__)
@@ -16,9 +19,16 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # 設定商品價格表
 menu = {
-    "咖啡": 50,
-    "蛋糕": 80,
-    "三明治": 100
+    "雞肉Taco": 100,
+    "牛肉Taco": 120,
+    "豬肉Taco": 110,
+    "香菜": 10,
+    "酪梨醬": 20,
+    "紅椒醬": 20,
+    "玉米脆片": 50,
+    "墨西哥風味飯": 60,
+    "咖啡": 40,
+    "紅茶": 35
 }
 
 # 模擬用戶購物車
@@ -44,55 +54,99 @@ def callback():
 def handle_message(event):
     user_id = event.source.user_id  # 獲取用戶 ID
     user_message = event.message.text.strip()
-    
+
     # 初始化用戶購物車
     if user_id not in user_cart:
         user_cart[user_id] = []
 
-    # 處理點餐
-    if user_message.startswith("我要點"):
-        item = user_message.replace("我要點", "").strip()
-        if item in menu:
-            user_cart[user_id].append(item)
-            reply_text = f"已加入 {item} 到你的購物車！目前購物車內容：{', '.join(user_cart[user_id])}"
-        else:
-            reply_text = "抱歉，我們沒有這個商品喔！請輸入有效的商品名稱：咖啡、蛋糕、三明治"
+    # 顯示圖文菜單
+    if user_message == "我要點餐":
+        send_menu(event)
+        return
 
-    # 查看購物車內容
+    # 查看購物車
     elif user_message == "查看購物車":
         if user_cart[user_id]:
             reply_text = f"你的購物車內有：{', '.join(user_cart[user_id])}"
         else:
-            reply_text = "你的購物車是空的，請輸入『我要點 咖啡』來開始點餐！"
+            reply_text = "你的購物車是空的，請輸入『我要點餐』來開始點餐！"
 
-    # 處理結帳
+    # 結帳
     elif user_message == "結帳":
         if not user_cart[user_id]:
             reply_text = "你的購物車是空的，請先點餐！"
         else:
-            # 計算總金額
             total = sum(menu[item] for item in user_cart[user_id])
-
-            # 設定折扣（滿 200 元打 9 折）
             discount = 0.9 if total >= 200 else 1.0
             final_price = int(total * discount)
 
-            # 清空購物車
             user_cart[user_id] = []
 
             reply_text = f"總金額為 {total} 元，折扣後金額：{final_price} 元\n請使用以下 Line Pay 連結付款：\nhttps://pay.line.me/123456789"
 
     else:
-        reply_text = "你好！請輸入『我要點 咖啡』來開始點餐，或輸入『查看購物車』來查看你的訂單。"
+        reply_text = "你好！請輸入『我要點餐』來開始點餐，或輸入『查看購物車』來查看你的訂單。"
 
-    # 回覆訊息
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+def send_menu(event):
+    """發送圖文菜單 (CarouselTemplate)"""
+    carousel_template = CarouselTemplate(columns=[
+        CarouselColumn(
+            text="選擇你的 Taco 口味",
+            actions=[
+                PostbackAction(label="雞肉 Taco", data="點 鷄肉Taco"),
+                PostbackAction(label="牛肉 Taco", data="點 牛肉Taco"),
+                PostbackAction(label="豬肉 Taco", data="點 豬肉Taco"),
+            ]
+        ),
+        CarouselColumn(
+            text="選擇配料",
+            actions=[
+                PostbackAction(label="加香菜 (+10元)", data="點 香菜"),
+                PostbackAction(label="加酪梨醬 (+20元)", data="點 酪梨醬"),
+                PostbackAction(label="加紅椒醬 (+20元)", data="點 紅椒醬"),
+            ]
+        ),
+        CarouselColumn(
+            text="選擇 Side",
+            actions=[
+                PostbackAction(label="玉米脆片 (+50元)", data="點 玉米脆片"),
+                PostbackAction(label="墨西哥風味飯 (+60元)", data="點 墨西哥風味飯"),
+            ]
+        ),
+        CarouselColumn(
+            text="選擇飲料",
+            actions=[
+                PostbackAction(label="咖啡 (+40元)", data="點 咖啡"),
+                PostbackAction(label="紅茶 (+35元)", data="點 紅茶"),
+            ]
+        ),
+    ])
+
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=reply_text)
+        TemplateSendMessage(alt_text="請選擇餐點", template=carousel_template)
     )
+
+@handler.add(MessageEvent, message=TextMessage)
+def handle_postback(event):
+    """處理用戶的 Postback 選擇"""
+    user_id = event.source.user_id
+    postback_data = event.postback.data
+
+    if postback_data.startswith("點 "):
+        item = postback_data.replace("點 ", "").strip()
+
+        if user_id not in user_cart:
+            user_cart[user_id] = []
+
+        user_cart[user_id].append(item)
+        reply_text = f"你已加入 {item}！目前購物車內容：{', '.join(user_cart[user_id])}"
+
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
 
