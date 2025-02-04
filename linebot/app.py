@@ -130,56 +130,101 @@ def handle_postback(event):
         user_id = event.source.user_id
         postback_data = event.postback.data
 
-        # 調試日誌
-        print(f"Postback data received: {postback_data}")
+        # **DEBUG LOG**
+        print(f"收到 Postback 資料: {postback_data}")
 
-        # 主餐選擇
+        # **初始化購物車**
+        if user_id not in user_cart:
+            user_cart[user_id] = {"items": [], "current_item": None}
+
+        # **主餐選擇**
         if postback_data.startswith("主餐_"):
             selected_main = postback_data.replace("主餐_", "")
-            user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "數量": None}
 
-            print(f"User selected main dish: {selected_main}")
+            # **初始化 current_item**
+            user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "數量": None}
+            
+            # **DEBUG LOG**
+            print(f"用戶選擇主餐: {selected_main}")
+            print(f"購物車狀態: {user_cart[user_id]}")
+
+            # **發送肉類選單**
             send_meat_menu(event, selected_main)
+
+        # **肉類選擇**
         elif postback_data.startswith("肉_"):
             selected_meat = postback_data.replace("肉_", "")
+
+            # **確保 current_item 存在**
+            if user_cart[user_id]["current_item"] is None:
+                raise ValueError("current_item 未初始化，無法選擇肉類！")
+
             user_cart[user_id]["current_item"]["肉類"] = selected_meat
 
-            print(f"User selected meat: {selected_meat}")
+            # **DEBUG LOG**
+            print(f"用戶選擇肉類: {selected_meat}")
+            print(f"購物車狀態: {user_cart[user_id]}")
+
             send_toppings_menu(event)
+
+        # **配料選擇**
         elif postback_data.startswith("配料_"):
             selected_topping = postback_data.replace("配料_", "")
+
+            if user_cart[user_id]["current_item"] is None:
+                raise ValueError("current_item 未初始化，無法選擇配料！")
+
             user_cart[user_id]["current_item"]["配料"].append(selected_topping)
 
-            print(f"User selected topping: {selected_topping}")
+            # **DEBUG LOG**
+            print(f"用戶選擇配料: {selected_topping}")
+            print(f"購物車狀態: {user_cart[user_id]}")
+
             send_quantity_menu(event)
+
+        # **數量選擇**
         elif postback_data.startswith("數量_"):
             selected_quantity = int(postback_data.replace("數量_", ""))
+
+            if user_cart[user_id]["current_item"] is None:
+                raise ValueError("current_item 未初始化，無法選擇數量！")
+
             user_cart[user_id]["current_item"]["數量"] = selected_quantity
 
-            # 儲存完成的訂單項目
+            # **完成訂單**
             user_cart[user_id]["items"].append(user_cart[user_id].pop("current_item"))
 
-            # 回饋完成的訂單
+            # **DEBUG LOG**
+            print(f"用戶選擇數量: {selected_quantity}")
+            print(f"購物車狀態: {user_cart[user_id]}")
+
+            # **回覆用戶已完成的訂單**
             current_item = user_cart[user_id]["items"][-1]
             reply_text = (
                 f"你已完成一份訂單：\n"
                 f"{current_item['數量']} 份 {current_item['主餐']}，肉類：{current_item['肉類']}，"
                 f"配料：{', '.join(current_item['配料'])}\n"
-                f"目前購物車有 {len(user_cart[user_id]['items'])} 筆訂單。"
+                f"目前購物車內有 {len(user_cart[user_id]['items'])} 筆訂單。"
             )
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+
     except Exception as e:
-        print(f"Error in handle_postback: {e}")
+        print(f"Error in handle_postback: {e}")  # **輸出錯誤資訊**
         line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")])
+
+
+
 
 
 
 def send_meat_menu(event, selected_main):
     """發送肉類選擇菜單（對應 Taco 或 Taco Bowl）"""
+    print(f"發送肉類選單給用戶，主餐: {selected_main}")  # **DEBUG LOG**
+    
     carousel_template = CarouselTemplate(columns=[
         CarouselColumn(
             thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
-            title=f"選擇{selected_main}的肉類",
+            title=f"選擇 {selected_main} 的肉類",
             text="請選擇你想要的肉類",
             actions=[
                 PostbackAction(label="雞肉", data="肉_雞肉"),
@@ -193,6 +238,7 @@ def send_meat_menu(event, selected_main):
         event.reply_token,
         [TemplateSendMessage(alt_text="請選擇肉類", template=carousel_template)]
     )
+
 
 
 def send_toppings_menu(event):
