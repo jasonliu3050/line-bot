@@ -45,47 +45,52 @@ if __name__ == "__main__":
 
 
 
-@HANDLER.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    user_message = event.message.text.lower().strip()  # 取得訊息並轉換為小寫
-    if user_message == "hello":
-        reply_text = "你好，請問你需要什麼服務？"
-    else:
-        reply_text = "抱歉，我不明白你的需求。"
+from flask import Flask, request, abort
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
+import os
+
+app = Flask(__name__)
+
+# 環境變數
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "你的測試用 Access Token")
+LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "你的測試用 Secret")
+
+if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_CHANNEL_SECRET:
+    raise ValueError("LINE_CHANNEL_ACCESS_TOKEN 或 LINE_CHANNEL_SECRET 未正確設置！")
+
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
+@app.route("/callback", methods=["POST"])
+def callback():
+    signature = request.headers["X-Line-Signature"]
+    body = request.get_data(as_text=True)
 
     try:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=reply_text)
-        )
-    except Exception as e:
-        print(f"回覆訊息時發生錯誤：{e}")
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
 
- # 回覆訊息
-    line_bot_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextMessage(text=reply_message)]
-        )
-    )
+    return "OK"
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    """處理接收到的訊息"""
-    user_message = event.message.text  # 取得使用者發送的文字
-    reply_message = f"你說了：{user_message}"
-
-@HANDLER.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    user_message = event.message.text.strip()  # 接收用戶訊息
-    reply_text = "你好，請問你需要什麼服務？"  # 預設回覆
+    user_message = event.message.text.strip()
+    print(f"收到訊息：{user_message}")
     
+    reply_text = "你好，請問你需要什麼服務？"
     try:
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=reply_text)
         )
+        print(f"成功回覆訊息：{reply_text}")
     except Exception as e:
-        print(f"回覆訊息時出現錯誤：{e}")
+        print(f"回覆訊息時發生錯誤：{e}")
+
+if __name__ == "__main__":
+    app.run(port=5000, debug=True)
 
 
