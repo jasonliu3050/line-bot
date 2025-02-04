@@ -1,24 +1,20 @@
-import sys 
-print(sys.path)
-
-from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
-from linebot.models import (
-    MessageEvent, PostbackEvent, TextSendMessage, PostbackAction,
-    CarouselTemplate, CarouselColumn, TemplateSendMessage
-)
 import os
+from flask import Flask, request, abort
+from linebot.v3.messaging import MessagingApi  # ✅ v3 版本
+from linebot.v3.webhook import WebhookHandler
+from linebot.v3.models import TextSendMessage, MessageEvent
 
-
-app = Flask(__name__)
-
-# 讀取環境變數
+# ✅ 先正确读取环境变量
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
-# 初始化 LINE Bot API（v3）
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+# ✅ 初始化 Flask 应用
+app = Flask(__name__)
+
+# ✅ 正确初始化 MessagingApi（v3）
+messaging_api = MessagingApi(channel_access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
 
 # 完整分類菜單
 menu = {
