@@ -5,9 +5,10 @@ from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
 import os
 
+
 # 讀取環境變數
-LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv(jn+yVvuHzPmJEKwIvhVv49+Oo21fyR9LSxxe/tY3Oj/u32gEVuA+oQDBURtRPFa7qumC+UHVmTVLchEytNUfZaiIU5FeITpe6bn+RuQKgirIhxmFK/pOrKDs3VDvJToAyBaHFC9bQLndHRQ3CNco7gdB04t89/1O/w1cDnyilFU=)
+LINE_CHANNEL_SECRET = os.getenv("L3ee2f70b35db40d5345ca2eefb8bda07")
 
 # 確保環境變數都已設定
 if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_CHANNEL_SECRET:
