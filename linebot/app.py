@@ -141,9 +141,11 @@ def handle_postback(event):
         if postback_data.startswith("主餐_"):
             selected_main = postback_data.replace("主餐_", "")
 
-            # **初始化 current_item**
-            user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "數量": None}
-            
+            # 初始化 current_item
+            user_cart[user_id]["current_item"] = {
+                "主餐": selected_main, "肉類": None, "配料": [], "醬料": [], "數量": None
+            }
+
             # **DEBUG LOG**
             print(f"用戶選擇主餐: {selected_main}")
             print(f"購物車狀態: {user_cart[user_id]}")
@@ -155,8 +157,8 @@ def handle_postback(event):
         elif postback_data.startswith("肉_"):
             selected_meat = postback_data.replace("肉_", "")
 
-            # **確保 current_item 存在**
-            if user_cart[user_id]["current_item"] is None:
+            # 確保 current_item 存在
+            if not user_cart[user_id]["current_item"]:
                 raise ValueError("current_item 未初始化，無法選擇肉類！")
 
             user_cart[user_id]["current_item"]["肉類"] = selected_meat
@@ -171,7 +173,7 @@ def handle_postback(event):
         elif postback_data.startswith("配料_"):
             selected_topping = postback_data.replace("配料_", "")
 
-            if user_cart[user_id]["current_item"] is None:
+            if not user_cart[user_id]["current_item"]:
                 raise ValueError("current_item 未初始化，無法選擇配料！")
 
             user_cart[user_id]["current_item"]["配料"].append(selected_topping)
@@ -180,13 +182,28 @@ def handle_postback(event):
             print(f"用戶選擇配料: {selected_topping}")
             print(f"購物車狀態: {user_cart[user_id]}")
 
-            send_quantity_menu(event)
+            send_sauce_menu(event)  # **改為發送醬料選單**
+
+        # **醬料選擇**
+        elif postback_data.startswith("醬料_"):
+            selected_sauce = postback_data.replace("醬料_", "")
+
+            if not user_cart[user_id]["current_item"]:
+                raise ValueError("current_item 未初始化，無法選擇醬料！")
+
+            user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
+
+            # **DEBUG LOG**
+            print(f"用戶選擇醬料: {selected_sauce}")
+            print(f"購物車狀態: {user_cart[user_id]}")
+
+            send_quantity_menu(event)  # **改為發送數量選單**
 
         # **數量選擇**
         elif postback_data.startswith("數量_"):
             selected_quantity = int(postback_data.replace("數量_", ""))
 
-            if user_cart[user_id]["current_item"] is None:
+            if not user_cart[user_id]["current_item"]:
                 raise ValueError("current_item 未初始化，無法選擇數量！")
 
             user_cart[user_id]["current_item"]["數量"] = selected_quantity
@@ -202,8 +219,10 @@ def handle_postback(event):
             current_item = user_cart[user_id]["items"][-1]
             reply_text = (
                 f"你已完成一份訂單：\n"
-                f"{current_item['數量']} 份 {current_item['主餐']}，肉類：{current_item['肉類']}，"
-                f"配料：{', '.join(current_item['配料'])}\n"
+                f"{current_item['數量']} 份 {current_item['主餐']}，"
+                f"肉類：{current_item['肉類']}，"
+                f"配料：{', '.join(current_item['配料'])}，"
+                f"醬料：{', '.join(current_item['醬料'])}\n"
                 f"目前購物車內有 {len(user_cart[user_id]['items'])} 筆訂單。"
             )
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
@@ -260,6 +279,35 @@ def send_toppings_menu(event):
         event.reply_token,
         [TemplateSendMessage(alt_text="請選擇配料", template=carousel_template)]
     )
+
+
+
+def send_sauce_menu(event):
+    """發送醬料選擇菜單"""
+    print("發送醬料選單")  # **DEBUG LOG**
+    
+    carousel_template = CarouselTemplate(columns=[
+        CarouselColumn(
+            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+            title="選擇你的醬料",
+            text="請選擇你想加的醬料",
+            actions=[
+                PostbackAction(label="紅椒醬 (+$20)", data="醬料_紅椒醬"),
+                PostbackAction(label="酪梨醬 (+$20)", data="醬料_酪梨醬"),
+                PostbackAction(label="莎莎醬 (+$15)", data="醬料_莎莎醬"),
+            ]
+        )
+    ])
+
+    try:
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TemplateSendMessage(alt_text="請選擇醬料", template=carousel_template)]
+        )
+    except Exception as e:
+        print(f"Error sending sauce menu: {e}")  # **DEBUG LOG**
+
+
 
 
 def checkout_order(event, user_id):
