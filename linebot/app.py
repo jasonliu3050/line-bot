@@ -91,15 +91,22 @@ def handle_message(event):
 
 
 def send_menu(event):
-    """發送主選單（Taco & Taco Bowl）"""
+    """發送主選單（獨立的 Taco 和 Taco Bowl 選單）"""
     carousel_template = CarouselTemplate(columns=[
         CarouselColumn(
             thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
-            title="選擇你的主餐",
-            text="請選擇 Taco 或 Taco Bowl",
+            title="Taco",
+            text="請選擇 Taco 作為主餐",
             actions=[
-                PostbackAction(label="Taco", data="主餐_Taco"),
-                PostbackAction(label="Taco Bowl", data="主餐_TacoBowl")
+                PostbackAction(label="選擇 Taco", data="主餐_Taco")
+            ]
+        ),
+        CarouselColumn(
+            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+            title="Taco Bowl",
+            text="請選擇 Taco Bowl 作為主餐",
+            actions=[
+                PostbackAction(label="選擇 Taco Bowl", data="主餐_TacoBowl")
             ]
         )
     ])
@@ -108,6 +115,7 @@ def send_menu(event):
         event.reply_token,
         [TemplateSendMessage(alt_text="請選擇主餐", template=carousel_template)]
     )
+
 
 
 
@@ -233,26 +241,6 @@ def checkout_order(event, user_id):
 
     line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
 
-
-@handler.add(MessageEvent)
-def handle_message(event):
-    user_id = event.source.user_id
-    user_message = event.message.text.strip()
-
-    if user_message == "我要點餐":
-        send_menu(event)
-    elif user_message == "查看購物車":
-        items = user_cart.get(user_id, {}).get("items", [])
-        if items:
-            cart_details = "\n".join(
-                [f"{item['數量']} 份 {item['主餐']}，肉類：{item['肉類']}，配料：{', '.join(item['配料'])}" for item in items]
-            )
-            reply_text = f"你的購物車內有：\n{cart_details}"
-        else:
-            reply_text = "你的購物車是空的，請輸入『我要點餐』來開始點餐！"
-        line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
-    elif user_message == "結帳":
-        checkout_order(event, user_id)
 
 
 
