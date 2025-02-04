@@ -22,18 +22,18 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
 menu = {
-    "雞肉Taco": 100,
-    "牛肉Taco": 120,
-    "豬肉Taco": 110,
-    "香菜": 10,
-    "酪梨醬": 20,
-    "紅椒醬": 20,
-    "莎莎醬": 15,
-    "玉米脆片": 50,
-    "墨西哥風味飯": 60,
-    "咖啡": 40,
-    "紅茶": 35
-}
+    "主餐": {
+        "雞肉Taco": 100,
+        "牛肉Taco": 120,
+        "豬肉Taco": 110
+    },
+    "配料": {
+        "香菜": 10,
+        "洋蔥": 10,
+        "番茄": 10
+    },
+    "醬汁": {
+
 
 
 # 用戶購物車
@@ -176,12 +176,23 @@ def handle_postback(event):
 
         # **醬料選擇**
         elif postback_data.startswith("醬料_"):
-            selected_sauce = postback_data.replace("醬料_", "")
-            if not user_cart[user_id]["current_item"]:
-                raise ValueError("[ERROR] current_item 未初始化，無法選擇醬料！")
-            user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
-            print(f"[DEBUG] 用戶選擇醬料: {selected_sauce}")
-            send_quantity_menu(event)
+    selected_sauce = postback_data.replace("醬料_", "")
+    
+    if not user_cart[user_id]["current_item"]:
+        print("[ERROR] current_item 未初始化，無法選擇醬料！")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請重新點餐。"))
+        return
+
+    # 確保 "醬料" 欄位存在
+    if "醬料" not in user_cart[user_id]["current_item"]:
+        user_cart[user_id]["current_item"]["醬料"] = []
+    
+    user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
+    print(f"[DEBUG] 用戶選擇醬料: {selected_sauce}")
+
+    # 發送下一個選項（例如選擇數量）
+    send_quantity_menu(event)
+
 
         # **數量選擇**
         elif postback_data.startswith("數量_"):
