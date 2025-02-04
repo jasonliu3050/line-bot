@@ -21,7 +21,6 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
-# 設定商品價格表
 menu = {
     "雞肉Taco": 100,
     "牛肉Taco": 120,
@@ -29,11 +28,13 @@ menu = {
     "香菜": 10,
     "酪梨醬": 20,
     "紅椒醬": 20,
+    "莎莎醬": 15,
     "玉米脆片": 50,
     "墨西哥風味飯": 60,
     "咖啡": 40,
     "紅茶": 35
 }
+
 
 # 用戶購物車
 user_cart = {}
@@ -90,45 +91,257 @@ def handle_message(event):
     line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
 
 
+
+
 def send_menu(event):
-    """發送圖文菜單"""
+    """發送主選單（獨立的 Taco 和 Taco Bowl 選單）"""
+    print("[DEBUG] 發送主選單")  # DEBUG LOG
+    
+    try:
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+                title="Taco",
+                text="請選擇 Taco 作為主餐",
+                actions=[
+                    PostbackAction(label="選擇 Taco", data="主餐_Taco")
+                ]
+            ),
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+                title="Taco Bowl",
+                text="請選擇 Taco Bowl 作為主餐",
+                actions=[
+                    PostbackAction(label="選擇 Taco Bowl", data="主餐_TacoBowl")
+                ]
+            )
+        ])
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TemplateSendMessage(alt_text="請選擇主餐", template=carousel_template)]
+        )
+        print("[DEBUG] 主選單發送成功")
+
+    except Exception as e:
+        print(f"[ERROR] 發送主選單時發生錯誤: {e}")
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextSendMessage(text="發送主選單時發生錯誤，請稍後再試！")]
+        )
+
+
+
+
+
+
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    try:
+        user_id = event.source.user_id
+        postback_data = event.postback.data
+
+        # **DEBUG LOG**
+        print(f"[DEBUG] 收到 Postback 資料: {postback_data}")
+        print(f"[DEBUG] 用戶 ID: {user_id}")
+
+        # 初始化購物車
+        if user_id not in user_cart:
+            user_cart[user_id] = {"items": [], "current_item": None}
+
+        # **主餐選擇**
+        if postback_data.startswith("主餐_"):
+            selected_main = postback_data.replace("主餐_", "")
+            user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "醬料": [], "數量": None}
+            print(f"[DEBUG] 用戶選擇主餐: {selected_main}")
+            send_meat_menu(event, selected_main)
+
+        # **肉類選擇**
+        elif postback_data.startswith("肉_"):
+            selected_meat = postback_data.replace("肉_", "")
+            if not user_cart[user_id]["current_item"]:
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇肉類！")
+            user_cart[user_id]["current_item"]["肉類"] = selected_meat
+            print(f"[DEBUG] 用戶選擇肉類: {selected_meat}")
+            send_toppings_menu(event)
+
+        # **配料選擇**
+        elif postback_data.startswith("配料_"):
+            selected_topping = postback_data.replace("配料_", "")
+            if not user_cart[user_id]["current_item"]:
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇配料！")
+            user_cart[user_id]["current_item"]["配料"].append(selected_topping)
+            print(f"[DEBUG] 用戶選擇配料: {selected_topping}")
+            send_sauce_menu(event)
+
+        # **醬料選擇**
+        elif postback_data.startswith("醬料_"):
+            selected_sauce = postback_data.replace("醬料_", "")
+            if not user_cart[user_id]["current_item"]:
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇醬料！")
+            user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
+            print(f"[DEBUG] 用戶選擇醬料: {selected_sauce}")
+            send_quantity_menu(event)
+
+        # **數量選擇**
+        elif postback_data.startswith("數量_"):
+            selected_quantity = int(postback_data.replace("數量_", ""))
+            if not user_cart[user_id]["current_item"]:
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇數量！")
+            user_cart[user_id]["current_item"]["數量"] = selected_quantity
+            user_cart[user_id]["items"].append(user_cart[user_id].pop("current_item"))
+            current_item = user_cart[user_id]["items"][-1]
+            reply_text = (
+                f"你已完成一份訂單：\n"
+                f"{current_item['數量']} 份 {current_item['主餐']}，"
+                f"肉類：{current_item['肉類']}，"
+                f"配料：{', '.join(current_item['配料'])}，"
+                f"醬料：{', '.join(current_item['醬料'])}\n"
+                f"目前購物車內有 {len(user_cart[user_id]['items'])} 筆訂單。"
+            )
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+
+    except Exception as e:
+        print(f"[ERROR] 在 handle_postback 中發生錯誤: {e}")  # 捕获详细错误
+        line_bot_api.reply_message(
+            event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")]
+        )
+
+
+
+
+
+
+def send_meat_menu(event, selected_main):
+    """發送肉類選擇菜單（對應 Taco 或 Taco Bowl）"""
+    print(f"[DEBUG] 發送肉類選單給用戶，主餐: {selected_main}")  # **DEBUG LOG**
+    
+    try:
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 確保圖片 URL 可用
+                title=f"選擇 {selected_main} 的肉類",
+                text="請選擇你想要的肉類：",
+                actions=[
+                    PostbackAction(label="雞肉", data="肉_雞肉"),
+                    PostbackAction(label="牛肉", data="肉_牛肉"),
+                    PostbackAction(label="豬肉", data="肉_豬肉"),
+                ]
+            )
+        ])
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TemplateSendMessage(alt_text="請選擇肉類", template=carousel_template)]
+        )
+
+    except Exception as e:
+        print(f"[ERROR] 發送肉類選單時出現錯誤: {e}")  # **輸出錯誤資訊**
+
+
+
+
+
+def send_toppings_menu(event):
+    """發送配料選擇菜單"""
     carousel_template = CarouselTemplate(columns=[
         CarouselColumn(
-            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 正确的 Imgur 图片 URL
-            title="選擇 Taco",
-            text="請選擇你的 Taco 口味",
+            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+            title="選擇你的配料",
+            text="請選擇你想加的配料",
             actions=[
-                PostbackAction(label="雞肉 Taco", data="點 雞肉Taco"),
-                PostbackAction(label="牛肉 Taco", data="點 牛肉Taco"),
-                PostbackAction(label="豬肉 Taco", data="點 豬肉Taco"),
+                PostbackAction(label="香菜 (+$10)", data="配料_香菜"),
+                PostbackAction(label="酪梨醬 (+$20)", data="配料_酪梨醬"),
+                PostbackAction(label="紅椒醬 (+$20)", data="配料_紅椒醬"),
             ]
         )
     ])
 
     line_bot_api.reply_message(
         event.reply_token,
-        [TemplateSendMessage(alt_text="請選擇餐點", template=carousel_template)]
+        [TemplateSendMessage(alt_text="請選擇配料", template=carousel_template)]
     )
 
 
 
-@handler.add(PostbackEvent)
-def handle_postback(event):
-    """處理用戶的 Postback 選擇"""
-    user_id = event.source.user_id
-    postback_data = event.postback.data
+def send_sauce_menu(event):
+    """發送醬料選擇菜單"""
+    print("[DEBUG] 發送醬料選單")  # DEBUG LOG
+    
+    try:
+        # 構建 CarouselTemplate
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 確保圖片可用
+                title="選擇醬料",
+                text="最多可選三種醬料：",
+                actions=[
+                    PostbackAction(label="紅椒醬 (+$20)", data="醬料_紅椒醬"),
+                    PostbackAction(label="酪梨醬 (+$20)", data="醬料_酪梨醬"),
+                    PostbackAction(label="莎莎醬 (+$15)", data="醬料_莎莎醬"),
+                ]
+            )
+        ])
+        
+        # 發送消息
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TemplateSendMessage(alt_text="請選擇醬料", template=carousel_template)]
+        )
 
-    if postback_data.startswith("點 "):
-        item = postback_data.replace("點 ", "").strip()
+    except Exception as e:
+        # 捕獲並打印錯誤信息
+        print(f"[ERROR] 發送醬料選單時出現錯誤: {e}")  # DEBUG LOG
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextSendMessage(text="發送醬料選單時發生錯誤，請稍後再試！")]
+        )
 
-        if user_id not in user_cart:
-            user_cart[user_id] = []
 
-        user_cart[user_id].append(item)
-        reply_text = f"你已加入 {item}！目前購物車內容：{', '.join(user_cart[user_id])}"
 
-        line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+
+def checkout_order(event, user_id):
+    """結帳功能，顯示完整訂單與總金額"""
+    if user_id not in user_cart or not user_cart[user_id]["items"]:
+        reply_text = "你的購物車是空的，請先點餐！"
+    else:
+        order_details = ""
+        total = 0
+        for item in user_cart[user_id]["items"]:
+            # 主餐价格
+            item_total = menu[item["主餐"]] * item["數量"]
+            
+            # 加入配料价格
+            item_total += sum(menu.get(topping, 0) for topping in item["配料"])
+            
+            # 加入醬料价格
+            item_total += sum(menu.get(sauce, 0) for sauce in item["醬料"])
+            
+            total += item_total
+            order_details += (
+                f"{item['數量']} 份 {item['主餐']}，肉類：{item['肉類']}，"
+                f"配料：{', '.join(item['配料'])}，醬料：{', '.join(item['醬料'])}，小計：{item_total} 元\n"
+            )
+
+        # 折扣处理
+        discount = 0.9 if total >= 200 else 1.0
+        final_price = int(total * discount)
+        reply_text = (
+            f"你的訂單如下：\n{order_details}"
+            f"總金額：{total} 元\n折扣後金額：{final_price} 元\n"
+            f"請使用以下 Line Pay 付款連結：\nhttps://pay.line.me/123456789"
+        )
+
+        # 清空購物車
+        user_cart[user_id]["items"] = []
+
+    line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+
+
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
+
