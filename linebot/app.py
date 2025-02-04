@@ -1,11 +1,11 @@
 from flask import Flask, request, abort
-from linebot.v3.messaging import MessagingApi
-from linebot.v3.webhook import WebhookHandler
-from linebot.models import MessageEvent, PostbackEvent
-from linebot.v3.messaging.models import (
-    TextSendMessage, PostbackAction, CarouselTemplate, CarouselColumn, TemplateSendMessage
+from linebot import LineBotApi, WebhookHandler
+from linebot.models import (
+    MessageEvent, PostbackEvent, TextSendMessage, PostbackAction,
+    CarouselTemplate, CarouselColumn, TemplateSendMessage
 )
 import os
+
 
 app = Flask(__name__)
 
@@ -14,8 +14,9 @@ LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
 # 初始化 LINE Bot API（v3）
-line_bot_api = MessagingApi(channel_access_token=LINE_CHANNEL_ACCESS_TOKEN)
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
 
 # 設定商品價格表
 menu = {
