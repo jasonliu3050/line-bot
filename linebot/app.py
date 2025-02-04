@@ -213,9 +213,9 @@ def handle_postback(event):
     
     # 檢查是否達到三種醬料上限
             if len(user_cart[user_id]["current_item"]["醬料"]) >= 3:
-            send_quantity_menu(event)  # 進入數量選擇
+                send_quantity_menu(event)  # 進入數量選擇
             else:
-            send_sauce_menu(event)  # 允許繼續選擇醬料
+                send_sauce_menu(event)  # 允許繼續選擇醬料
 
 
         # **數量選擇**
