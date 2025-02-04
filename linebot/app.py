@@ -33,6 +33,19 @@ menu = {
         "番茄": 10
     },
     "醬汁": {
+        "莎莎醬": 15,
+        "酪梨醬": 20,
+        "紅椒醬": 20
+    },
+    "點心": {
+        "玉米脆片": 50,
+        "墨西哥風味飯": 60
+    },
+    "飲料": {
+        "咖啡": 40,
+        "紅茶": 35
+    }
+}
 
 
 
@@ -177,7 +190,7 @@ def handle_postback(event):
         # **醬料選擇**
         elif postback_data.startswith("醬料_"):
     selected_sauce = postback_data.replace("醬料_", "")
-    
+
     if not user_cart[user_id]["current_item"]:
         print("[ERROR] current_item 未初始化，無法選擇醬料！")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請重新點餐。"))
@@ -186,12 +199,19 @@ def handle_postback(event):
     # 確保 "醬料" 欄位存在
     if "醬料" not in user_cart[user_id]["current_item"]:
         user_cart[user_id]["current_item"]["醬料"] = []
-    
+
+    # 確保醬料屬於 `menu["醬汁"]`
+    if selected_sauce not in menu["醬汁"]:
+        print(f"[ERROR] 選擇的醬料 {selected_sauce} 不在菜單內！")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="此醬料無效，請重新選擇。"))
+        return
+
     user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
     print(f"[DEBUG] 用戶選擇醬料: {selected_sauce}")
 
-    # 發送下一個選項（例如選擇數量）
+    # 發送下一個選擇（例如數量選擇）
     send_quantity_menu(event)
+
 
 
         # **數量選擇**
@@ -262,8 +282,8 @@ def send_toppings_menu(event):
             text="請選擇你想加的配料",
             actions=[
                 PostbackAction(label="香菜 (+$10)", data="配料_香菜"),
-                PostbackAction(label="酪梨醬 (+$20)", data="配料_酪梨醬"),
-                PostbackAction(label="紅椒醬 (+$20)", data="配料_紅椒醬"),
+                PostbackAction(label="洋蔥 (+$10)", data="配料_洋蔥"),
+                PostbackAction(label="番茄 (+$10)", data="配料_番茄"),
             ]
         )
     ])
@@ -272,6 +292,7 @@ def send_toppings_menu(event):
         event.reply_token,
         [TemplateSendMessage(alt_text="請選擇配料", template=carousel_template)]
     )
+
 
 
 
