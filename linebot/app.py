@@ -4,20 +4,25 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 import os
 
-# 初始化 Flask 應用
 app = Flask(__name__)
 
 # 讀取環境變數
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
-# 確保環境變數已設置
-if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_CHANNEL_SECRET:
-    raise ValueError("❌ 環境變數未設置，請檢查 Render 的 Environment Variables 是否正確設置！")
-
-# 初始化 LINE Messaging API 和 WebhookHandler
+# 初始化 LINE Bot API
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
+# 設定商品價格表
+menu = {
+    "咖啡": 50,
+    "蛋糕": 80,
+    "三明治": 100
+}
+
+# 模擬用戶購物車
+user_cart = {}
 
 @app.route("/", methods=["GET"])
 def home():
@@ -25,42 +30,66 @@ def home():
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    # 獲取 LINE 傳來的簽名
     signature = request.headers.get("X-Line-Signature")
-    # 獲取 Webhook 的內容
     body = request.get_data(as_text=True)
-    print(f"收到的 Webhook 請求內容：{body}")  # 日誌輸出內容
 
     try:
-        # 驗證簽名並處理事件
         handler.handle(body, signature)
     except InvalidSignatureError:
-        print("簽名驗證失敗")
-        abort(400)  # 如果驗證失敗，返回 400 狀態碼
+        abort(400)
 
     return "OK"
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    # 獲取用戶發送的消息
+    user_id = event.source.user_id  # 獲取用戶 ID
     user_message = event.message.text.strip()
-    print(f"用戶訊息：{user_message}")  # 日誌輸出
+    
+    # 初始化用戶購物車
+    if user_id not in user_cart:
+        user_cart[user_id] = []
 
-    # 回覆的邏輯
-    if user_message.lower() == "hello":  # 如果用戶發送 "hello"
-        reply_text = "你好，請問你需要什麼服務？"
+    # 處理點餐
+    if user_message.startswith("我要點"):
+        item = user_message.replace("我要點", "").strip()
+        if item in menu:
+            user_cart[user_id].append(item)
+            reply_text = f"已加入 {item} 到你的購物車！目前購物車內容：{', '.join(user_cart[user_id])}"
+        else:
+            reply_text = "抱歉，我們沒有這個商品喔！請輸入有效的商品名稱：咖啡、蛋糕、三明治"
+
+    # 查看購物車內容
+    elif user_message == "查看購物車":
+        if user_cart[user_id]:
+            reply_text = f"你的購物車內有：{', '.join(user_cart[user_id])}"
+        else:
+            reply_text = "你的購物車是空的，請輸入『我要點 咖啡』來開始點餐！"
+
+    # 處理結帳
+    elif user_message == "結帳":
+        if not user_cart[user_id]:
+            reply_text = "你的購物車是空的，請先點餐！"
+        else:
+            # 計算總金額
+            total = sum(menu[item] for item in user_cart[user_id])
+
+            # 設定折扣（滿 200 元打 9 折）
+            discount = 0.9 if total >= 200 else 1.0
+            final_price = int(total * discount)
+
+            # 清空購物車
+            user_cart[user_id] = []
+
+            reply_text = f"總金額為 {total} 元，折扣後金額：{final_price} 元\n請使用以下 Line Pay 連結付款：\nhttps://pay.line.me/123456789"
+
     else:
-        reply_text = f"我收到你的訊息了：{user_message}"
+        reply_text = "你好！請輸入『我要點 咖啡』來開始點餐，或輸入『查看購物車』來查看你的訂單。"
 
-    # 回覆用戶
-    try:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=reply_text)
-        )
-        print(f"成功回覆用戶：{reply_text}")  # 日誌輸出
-    except Exception as e:
-        print(f"回覆訊息時發生錯誤：{e}")
+    # 回覆訊息
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=reply_text)
+    )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
