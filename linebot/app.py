@@ -37,21 +37,7 @@ def callback():
     except InvalidSignatureError:
         abort(400)
     return "OK"
-
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    """處理接收到的訊息"""
-    user_message = event.message.text  # 取得使用者發送的文字
-    reply_message = f"你說了：{user_message}"
     
-    # 回覆訊息
-    line_bot_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextMessage(text=reply_message)]
-        )
-    )
-
 if __name__ == "__main__":
     # 取得 Render 提供的 PORT，若無則預設 5000
     port = int(os.environ.get("PORT", 5000))
@@ -75,8 +61,19 @@ def handle_message(event):
     except Exception as e:
         print(f"回覆訊息時發生錯誤：{e}")
 
+ # 回覆訊息
+    line_bot_api.reply_message(
+        ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[TextMessage(text=reply_message)]
+        )
+    )
 
-
+@handler.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    """處理接收到的訊息"""
+    user_message = event.message.text  # 取得使用者發送的文字
+    reply_message = f"你說了：{user_message}"
 
 
 
