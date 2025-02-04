@@ -131,91 +131,54 @@ def handle_postback(event):
         postback_data = event.postback.data
 
         # **DEBUG LOG**
-        print(f"收到 Postback 資料: {postback_data}")
+        print(f"[DEBUG] 收到 Postback 資料: {postback_data}")
+        print(f"[DEBUG] 用戶 ID: {user_id}")
 
-        # **初始化購物車**
+        # 初始化購物車
         if user_id not in user_cart:
             user_cart[user_id] = {"items": [], "current_item": None}
 
         # **主餐選擇**
         if postback_data.startswith("主餐_"):
             selected_main = postback_data.replace("主餐_", "")
-
-            # 初始化 current_item
-            user_cart[user_id]["current_item"] = {
-                "主餐": selected_main, "肉類": None, "配料": [], "醬料": [], "數量": None
-            }
-
-            # **DEBUG LOG**
-            print(f"用戶選擇主餐: {selected_main}")
-            print(f"購物車狀態: {user_cart[user_id]}")
-
-            # **發送肉類選單**
+            user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "醬料": [], "數量": None}
+            print(f"[DEBUG] 用戶選擇主餐: {selected_main}")
             send_meat_menu(event, selected_main)
 
         # **肉類選擇**
         elif postback_data.startswith("肉_"):
             selected_meat = postback_data.replace("肉_", "")
-
-            # 確保 current_item 存在
             if not user_cart[user_id]["current_item"]:
-                raise ValueError("current_item 未初始化，無法選擇肉類！")
-
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇肉類！")
             user_cart[user_id]["current_item"]["肉類"] = selected_meat
-
-            # **DEBUG LOG**
-            print(f"用戶選擇肉類: {selected_meat}")
-            print(f"購物車狀態: {user_cart[user_id]}")
-
+            print(f"[DEBUG] 用戶選擇肉類: {selected_meat}")
             send_toppings_menu(event)
 
         # **配料選擇**
         elif postback_data.startswith("配料_"):
             selected_topping = postback_data.replace("配料_", "")
-
             if not user_cart[user_id]["current_item"]:
-                raise ValueError("current_item 未初始化，無法選擇配料！")
-
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇配料！")
             user_cart[user_id]["current_item"]["配料"].append(selected_topping)
-
-            # **DEBUG LOG**
-            print(f"用戶選擇配料: {selected_topping}")
-            print(f"購物車狀態: {user_cart[user_id]}")
-
-            send_sauce_menu(event)  # **改為發送醬料選單**
+            print(f"[DEBUG] 用戶選擇配料: {selected_topping}")
+            send_sauce_menu(event)
 
         # **醬料選擇**
         elif postback_data.startswith("醬料_"):
             selected_sauce = postback_data.replace("醬料_", "")
-
             if not user_cart[user_id]["current_item"]:
-                raise ValueError("current_item 未初始化，無法選擇醬料！")
-
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇醬料！")
             user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
-
-            # **DEBUG LOG**
-            print(f"用戶選擇醬料: {selected_sauce}")
-            print(f"購物車狀態: {user_cart[user_id]}")
-
-            send_quantity_menu(event)  # **改為發送數量選單**
+            print(f"[DEBUG] 用戶選擇醬料: {selected_sauce}")
+            send_quantity_menu(event)
 
         # **數量選擇**
         elif postback_data.startswith("數量_"):
             selected_quantity = int(postback_data.replace("數量_", ""))
-
             if not user_cart[user_id]["current_item"]:
-                raise ValueError("current_item 未初始化，無法選擇數量！")
-
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇數量！")
             user_cart[user_id]["current_item"]["數量"] = selected_quantity
-
-            # **完成訂單**
             user_cart[user_id]["items"].append(user_cart[user_id].pop("current_item"))
-
-            # **DEBUG LOG**
-            print(f"用戶選擇數量: {selected_quantity}")
-            print(f"購物車狀態: {user_cart[user_id]}")
-
-            # **回覆用戶已完成的訂單**
             current_item = user_cart[user_id]["items"][-1]
             reply_text = (
                 f"你已完成一份訂單：\n"
@@ -228,8 +191,10 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
 
     except Exception as e:
-        print(f"Error in handle_postback: {e}")  # **輸出錯誤資訊**
-        line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")])
+        print(f"[ERROR] 在 handle_postback 中發生錯誤: {e}")  # 捕获详细错误
+        line_bot_api.reply_message(
+            event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")]
+        )
 
 
 
