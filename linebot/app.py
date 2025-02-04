@@ -1,5 +1,5 @@
 from flask import Flask, request, abort
-from linebot.v3.messaging import MessagingApi
+from linebot.v3.messaging import MessagingApi, ReplyMessageRequest
 from linebot.v3.webhook import WebhookHandler, MessageEvent
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging.models import TextMessage
@@ -42,10 +42,13 @@ def handle_message(event):
     """處理接收到的訊息"""
     user_message = event.message.text  # 取得使用者發送的文字
     reply_message = f"你說了：{user_message}"
+    
     # 回覆訊息
     line_bot_api.reply_message(
-        event.reply_token,
-        [TextSendMessage(text=reply_message)]
+        ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[TextMessage(text=reply_message)]
+        )
     )
 
 if __name__ == "__main__":
