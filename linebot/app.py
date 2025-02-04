@@ -1,7 +1,9 @@
 from flask import Flask, request, abort
 from linebot.v3.messaging import MessagingApi
 from linebot.v3.webhook import WebhookHandler, MessageEvent, PostbackEvent
-from linebot.v3.messaging.models import TextSendMessage
+from linebot.v3.messaging.models import (
+    TextSendMessage, PostbackAction, CarouselTemplate, CarouselColumn, TemplateSendMessage
+)
 import os
 
 app = Flask(__name__)
@@ -11,7 +13,7 @@ LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
 # 初始化 LINE Bot API（v3）
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+line_bot_api = MessagingApi(channel_access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # 設定商品價格表
@@ -42,12 +44,13 @@ def callback():
 
     try:
         handler.handle(body, signature)
-    except InvalidSignatureError:
+    except Exception as e:
+        print(f"Webhook Error: {e}")
         abort(400)
 
     return "OK"
 
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(MessageEvent)
 def handle_message(event):
     """處理用戶文字輸入"""
     user_id = event.source.user_id
@@ -82,7 +85,7 @@ def handle_message(event):
     line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
 
 def send_menu(event):
-    """發送圖文菜單 (CarouselTemplate)"""
+    """發送圖文菜單"""
     carousel_template = CarouselTemplate(columns=[
         CarouselColumn(
             thumbnail_image_url="https://example.com/chicken_taco.jpg",
@@ -93,37 +96,7 @@ def send_menu(event):
                 PostbackAction(label="牛肉 Taco", data="點 牛肉Taco"),
                 PostbackAction(label="豬肉 Taco", data="點 豬肉Taco"),
             ]
-        ),
-        CarouselColumn(
-            thumbnail_image_url="https://example.com/toppings.jpg",
-            title="選擇配料",
-            text="可選擇額外配料",
-            actions=[
-                PostbackAction(label="加香菜 (+10元)", data="點 香菜"),
-                PostbackAction(label="加酪梨醬 (+20元)", data="點 酪梨醬"),
-                PostbackAction(label="無需配料", data="點 無配料"),
-            ]
-        ),
-        CarouselColumn(
-            thumbnail_image_url="https://example.com/side.jpg",
-            title="選擇 Side",
-            text="選擇你的 Side",
-            actions=[
-                PostbackAction(label="玉米脆片 (+50元)", data="點 玉米脆片"),
-                PostbackAction(label="墨西哥風味飯 (+60元)", data="點 墨西哥風味飯"),
-                PostbackAction(label="無 Side", data="點 無Side"),
-            ]
-        ),
-        CarouselColumn(
-            thumbnail_image_url="https://example.com/drinks.jpg",
-            title="選擇飲料",
-            text="請選擇飲料",
-            actions=[
-                PostbackAction(label="咖啡 (+40元)", data="點 咖啡"),
-                PostbackAction(label="紅茶 (+35元)", data="點 紅茶"),
-                PostbackAction(label="無飲料", data="點 無飲料"),
-            ]
-        ),
+        )
     ])
 
     line_bot_api.reply_message(
@@ -151,4 +124,5 @@ def handle_postback(event):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
