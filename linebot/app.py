@@ -91,43 +91,104 @@ def handle_message(event):
 
 
 def send_menu(event):
-    """發送圖文菜單"""
+    """發送主選單（Taco & Taco Bowl）"""
     carousel_template = CarouselTemplate(columns=[
         CarouselColumn(
-            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 正确的 Imgur 图片 URL
-            title="選擇 Taco",
-            text="請選擇你的 Taco 口味",
+            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+            title="選擇你的主餐",
+            text="請選擇 Taco 或 Taco Bowl",
             actions=[
-                PostbackAction(label="雞肉 Taco", data="點 雞肉Taco"),
-                PostbackAction(label="牛肉 Taco", data="點 牛肉Taco"),
-                PostbackAction(label="豬肉 Taco", data="點 豬肉Taco"),
+                PostbackAction(label="Taco", data="選擇_Taco"),
+                PostbackAction(label="Taco Bowl", data="選擇_TacoBowl")
             ]
         )
     ])
 
     line_bot_api.reply_message(
         event.reply_token,
-        [TemplateSendMessage(alt_text="請選擇餐點", template=carousel_template)]
+        [TemplateSendMessage(alt_text="請選擇主餐", template=carousel_template)]
     )
+
 
 
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
-    """處理用戶的 Postback 選擇"""
+    """處理 Postback 事件"""
     user_id = event.source.user_id
     postback_data = event.postback.data
 
-    if postback_data.startswith("點 "):
-        item = postback_data.replace("點 ", "").strip()
+    # 記錄購物車（初始化）
+    if user_id not in user_cart:
+        user_cart[user_id] = []
 
-        if user_id not in user_cart:
-            user_cart[user_id] = []
+    # 第一層：選擇主餐
+    if postback_data.startswith("選擇_"):
+        selected_main = postback_data.replace("選擇_", "")
+        user_cart[user_id].append(selected_main)
 
-        user_cart[user_id].append(item)
-        reply_text = f"你已加入 {item}！目前購物車內容：{', '.join(user_cart[user_id])}"
+        # 發送肉類選擇菜單
+        send_meat_menu(event, selected_main)
 
+    # 第二層：選擇肉類
+    elif postback_data.startswith("肉_"):
+        selected_meat = postback_data.replace("肉_", "")
+        user_cart[user_id].append(selected_meat)
+
+        # 發送配料選單
+        send_toppings_menu(event)
+
+    # 第三層：選擇配料
+    elif postback_data.startswith("配料_"):
+        selected_topping = postback_data.replace("配料_", "")
+        user_cart[user_id].append(selected_topping)
+
+        reply_text = f"你已加入 {selected_topping}！目前購物車內容：{', '.join(user_cart[user_id])}"
         line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+
+
+def send_meat_menu(event, selected_main):
+    """發送肉類選擇菜單（對應 Taco 或 Taco Bowl）"""
+    carousel_template = CarouselTemplate(columns=[
+        CarouselColumn(
+            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+            title=f"選擇{selected_main}的肉類",
+            text="請選擇你想要的肉類",
+            actions=[
+                PostbackAction(label="雞肉", data="肉_雞肉"),
+                PostbackAction(label="牛肉", data="肉_牛肉"),
+                PostbackAction(label="豬肉", data="肉_豬肉"),
+            ]
+        )
+    ])
+
+    line_bot_api.reply_message(
+        event.reply_token,
+        [TemplateSendMessage(alt_text="請選擇肉類", template=carousel_template)]
+    )
+
+
+def send_toppings_menu(event):
+    """發送配料選擇菜單"""
+    carousel_template = CarouselTemplate(columns=[
+        CarouselColumn(
+            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+            title="選擇你的配料",
+            text="請選擇你想加的配料",
+            actions=[
+                PostbackAction(label="香菜 (+$10)", data="配料_香菜"),
+                PostbackAction(label="酪梨醬 (+$20)", data="配料_酪梨醬"),
+                PostbackAction(label="紅椒醬 (+$20)", data="配料_紅椒醬"),
+            ]
+        )
+    ])
+
+    line_bot_api.reply_message(
+        event.reply_token,
+        [TemplateSendMessage(alt_text="請選擇配料", template=carousel_template)]
+    )
+
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
