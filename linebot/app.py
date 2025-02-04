@@ -2,7 +2,7 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage, ButtonsTemplate,
+    MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage, PostbackEvent,
     CarouselTemplate, CarouselColumn, PostbackAction
 )
 import os
@@ -52,14 +52,15 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    user_id = event.source.user_id  # 獲取用戶 ID
+    """處理用戶文字輸入"""
+    user_id = event.source.user_id
     user_message = event.message.text.strip()
 
-    # 初始化用戶購物車
+    # 初始化購物車
     if user_id not in user_cart:
         user_cart[user_id] = []
 
-    # 顯示圖文菜單
+    # 發送菜單
     if user_message == "我要點餐":
         send_menu(event)
         return
@@ -82,7 +83,7 @@ def handle_message(event):
 
             user_cart[user_id] = []
 
-            reply_text = f"總金額為 {total} 元，折扣後金額：{final_price} 元\n請使用以下 Line Pay 連結付款：\nhttps://pay.line.me/123456789"
+            reply_text = f"總金額為 {total} 元，折扣後金額：{final_price} 元\n請使用以下 Line Pay 付款連結：\nhttps://pay.line.me/123456789"
 
     else:
         reply_text = "你好！請輸入『我要點餐』來開始點餐，或輸入『查看購物車』來查看你的訂單。"
@@ -95,7 +96,7 @@ def send_menu(event):
         CarouselColumn(
             text="選擇你的 Taco 口味",
             actions=[
-                PostbackAction(label="雞肉 Taco", data="點 鷄肉Taco"),
+                PostbackAction(label="雞肉 Taco", data="點 雞肉Taco"),
                 PostbackAction(label="牛肉 Taco", data="點 牛肉Taco"),
                 PostbackAction(label="豬肉 Taco", data="點 豬肉Taco"),
             ]
@@ -129,11 +130,11 @@ def send_menu(event):
         TemplateSendMessage(alt_text="請選擇餐點", template=carousel_template)
     )
 
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(PostbackEvent)
 def handle_postback(event):
     """處理用戶的 Postback 選擇"""
     user_id = event.source.user_id
-    postback_data = event.postback.data
+    postback_data = event.postback.data  # ✅ 這樣才會正常運作
 
     if postback_data.startswith("點 "):
         item = postback_data.replace("點 ", "").strip()
@@ -149,4 +150,3 @@ def handle_postback(event):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
