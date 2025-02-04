@@ -37,15 +37,6 @@ def callback():
     except InvalidSignatureError:
         abort(400)
     return "OK"
-    
-if __name__ == "__main__":
-    # 取得 Render 提供的 PORT，若無則預設 5000
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
-
-
-
-
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
@@ -80,4 +71,9 @@ def handle_message(event):
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
 
+
+if __name__ == "__main__":
+    # 取得 Render 提供的 PORT，若無則預設 5000
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
 
