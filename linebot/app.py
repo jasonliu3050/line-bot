@@ -334,23 +334,22 @@ def send_sauce_menu(event):
 
 
 
-
 def checkout_order(event, user_id):
     """結帳功能，顯示完整訂單與總金額"""
-    if user_id not in user_cart or not user_cart[user_id]["items"]:
+    if user_id not in user_cart or "items" not in user_cart[user_id] or not user_cart[user_id]["items"]:
         reply_text = "你的購物車是空的，請先點餐！"
     else:
         order_details = ""
         total = 0
         for item in user_cart[user_id]["items"]:
-            # 主餐价格
-            item_total = menu[item["主餐"]] * item["數量"]
+            # 主餐價格
+            item_total = menu["主餐"].get(item["主餐"], 0) * item["數量"]
             
-            # 加入配料价格
-            item_total += sum(menu.get(topping, 0) for topping in item["配料"])
+            # 加入配料價格
+            item_total += sum(menu["配料"].get(topping, 0) for topping in item["配料"])
             
-            # 加入醬料价格
-            item_total += sum(menu.get(sauce, 0) for sauce in item["醬料"])
+            # 加入醬料價格
+            item_total += sum(menu["醬汁"].get(sauce, 0) for sauce in item["醬料"])
             
             total += item_total
             order_details += (
@@ -358,7 +357,7 @@ def checkout_order(event, user_id):
                 f"配料：{', '.join(item['配料'])}，醬料：{', '.join(item['醬料'])}，小計：{item_total} 元\n"
             )
 
-        # 折扣处理
+        # 折扣處理
         discount = 0.9 if total >= 200 else 1.0
         final_price = int(total * discount)
         reply_text = (
@@ -367,8 +366,8 @@ def checkout_order(event, user_id):
             f"請使用以下 Line Pay 付款連結：\nhttps://pay.line.me/123456789"
         )
 
-        # 清空購物車
-        user_cart[user_id]["items"] = []
+        # 清空購物車，確保結構仍然存在
+        user_cart[user_id] = {"items": []}
 
     line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
 
