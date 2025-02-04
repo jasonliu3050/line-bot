@@ -2,8 +2,9 @@ from flask import Flask, request, abort
 from linebot.v3.messaging import MessagingApi
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.webhooks import MessageEvent, PostbackEvent
 from linebot.v3.models import (
-    MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage, PostbackEvent,
+    TextMessage, TextSendMessage, TemplateSendMessage, 
     CarouselTemplate, CarouselColumn, PostbackAction
 )
 import os
@@ -111,7 +112,7 @@ def send_menu(event):
             actions=[
                 PostbackAction(label="加香菜 (+10元)", data="點 香菜"),
                 PostbackAction(label="加酪梨醬 (+20元)", data="點 酪梨醬"),
-                PostbackAction(label="無需配料", data="點 無配料"),  # 確保所有欄位有 3 個選項
+                PostbackAction(label="無需配料", data="點 無配料"),
             ]
         ),
         CarouselColumn(
