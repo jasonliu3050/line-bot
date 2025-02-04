@@ -297,8 +297,8 @@ def send_sauce_menu(event):
         carousel_template = CarouselTemplate(columns=[
             CarouselColumn(
                 thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 確保圖片可用
-                title="選擇你的醬料",
-                text="請選擇你想加的醬料：",
+                title="選擇醬料",
+                text="最多可選三種醬料：",
                 actions=[
                     PostbackAction(label="紅椒醬 (+$20)", data="醬料_紅椒醬"),
                     PostbackAction(label="酪梨醬 (+$20)", data="醬料_酪梨醬"),
@@ -316,6 +316,10 @@ def send_sauce_menu(event):
     except Exception as e:
         # 捕獲並打印錯誤信息
         print(f"[ERROR] 發送醬料選單時出現錯誤: {e}")  # DEBUG LOG
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextSendMessage(text="發送醬料選單時發生錯誤，請稍後再試！")]
+        )
 
 
 
