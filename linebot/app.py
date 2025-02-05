@@ -1,38 +1,57 @@
-import sys
-print(sys.path)
-
-from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
-from linebot.models import (
-    MessageEvent, PostbackEvent, TextSendMessage, PostbackAction,
-    CarouselTemplate, CarouselColumn, TemplateSendMessage
-)
 import os
+from flask import Flask, request, abort
+from linebot.v3.messaging import MessagingApi  # ✅ v3 版本
+from linebot.v3.webhook import WebhookHandler
+from linebot.v3.models import TextSendMessage, MessageEvent
 
-
-app = Flask(__name__)
-
-# 讀取環境變數
+# ✅ 先正确读取环境变量
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
-# 初始化 LINE Bot API（v3）
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+# ✅ 初始化 Flask 应用
+app = Flask(__name__)
+
+# ✅ 正确初始化 MessagingApi（v3）
+messaging_api = MessagingApi(channel_access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
+# 完整分類菜單
 menu = {
-    "雞肉Taco": 100,
-    "牛肉Taco": 120,
-    "豬肉Taco": 110,
-    "香菜": 10,
-    "酪梨醬": 20,
-    "紅椒醬": 20,
-    "莎莎醬": 15,
-    "玉米脆片": 50,
-    "墨西哥風味飯": 60,
-    "咖啡": 40,
-    "紅茶": 35
+    "主餐": {
+        "雞肉Taco": 100,
+        "牛肉Taco": 120,
+        "豬肉Taco": 110,
+        "雞肉Taco Bowl": 130,
+        "牛肉Taco Bowl": 150,
+        "豬肉Taco Bowl": 140
+    },
+    "配料": {
+        "香菜": 10,
+        "洋蔥": 10,
+        "番茄": 10,
+        "生菜": 10,
+        "玉米": 15
+    },
+    "醬汁": {
+        "莎莎醬": 15,
+        "酪梨醬": 20,
+        "紅椒醬": 20,
+        "酸奶醬": 15
+    },
+    "點心": {
+        "玉米脆片": 50,
+        "墨西哥風味飯": 60,
+        "起司棒": 55,
+        "炸薯條": 45
+    },
+    "飲料": {
+        "咖啡": 40,
+        "紅茶": 35,
+        "柳橙汁": 45,
+        "可樂": 30,
+        "檸檬水": 25
+    }
 }
 
 
@@ -177,11 +196,23 @@ def handle_postback(event):
         # **醬料選擇**
         elif postback_data.startswith("醬料_"):
             selected_sauce = postback_data.replace("醬料_", "")
-            if not user_cart[user_id]["current_item"]:
-                raise ValueError("[ERROR] current_item 未初始化，無法選擇醬料！")
+    
+    # 確保 current_item 存在
+            if user_id not in user_cart or "current_item" not in user_cart[user_id] or not user_cart[user_id]["current_item"]:
+                print("[ERROR] current_item 未初始化，無法選擇醬料！")
+                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請重新開始點餐！")])
+                return
+
+    # 添加醬料
             user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
             print(f"[DEBUG] 用戶選擇醬料: {selected_sauce}")
-            send_quantity_menu(event)
+    
+    # 檢查是否達到三種醬料上限
+            if len(user_cart[user_id]["current_item"]["醬料"]) >= 3:
+                send_quantity_menu(event)  # 進入數量選擇
+            else:
+                send_sauce_menu(event)  # 允許繼續選擇醬料
+
 
         # **數量選擇**
         elif postback_data.startswith("數量_"):
@@ -299,23 +330,22 @@ def send_sauce_menu(event):
 
 
 
-
 def checkout_order(event, user_id):
     """結帳功能，顯示完整訂單與總金額"""
-    if user_id not in user_cart or not user_cart[user_id]["items"]:
+    if user_id not in user_cart or "items" not in user_cart[user_id] or not user_cart[user_id]["items"]:
         reply_text = "你的購物車是空的，請先點餐！"
     else:
         order_details = ""
         total = 0
         for item in user_cart[user_id]["items"]:
-            # 主餐价格
-            item_total = menu[item["主餐"]] * item["數量"]
+            # 主餐價格
+            item_total = menu["主餐"].get(item["主餐"], 0) * item["數量"]
             
-            # 加入配料价格
-            item_total += sum(menu.get(topping, 0) for topping in item["配料"])
+            # 加入配料價格
+            item_total += sum(menu["配料"].get(topping, 0) for topping in item["配料"])
             
-            # 加入醬料价格
-            item_total += sum(menu.get(sauce, 0) for sauce in item["醬料"])
+            # 加入醬料價格
+            item_total += sum(menu["醬汁"].get(sauce, 0) for sauce in item["醬料"])
             
             total += item_total
             order_details += (
@@ -323,7 +353,7 @@ def checkout_order(event, user_id):
                 f"配料：{', '.join(item['配料'])}，醬料：{', '.join(item['醬料'])}，小計：{item_total} 元\n"
             )
 
-        # 折扣处理
+        # 折扣處理
         discount = 0.9 if total >= 200 else 1.0
         final_price = int(total * discount)
         reply_text = (
@@ -332,8 +362,8 @@ def checkout_order(event, user_id):
             f"請使用以下 Line Pay 付款連結：\nhttps://pay.line.me/123456789"
         )
 
-        # 清空購物車
-        user_cart[user_id]["items"] = []
+        # 清空購物車，確保結構仍然存在
+        user_cart[user_id] = {"items": []}
 
     line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
 
@@ -343,5 +373,4 @@ def checkout_order(event, user_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
 
