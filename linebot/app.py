@@ -92,11 +92,10 @@ def handle_message(event):
 
 
 
-
 def send_menu(event):
     """發送主選單（獨立的 Taco 和 Taco Bowl 選單）"""
     print("[DEBUG] 發送主選單")  # DEBUG LOG
-    
+
     try:
         carousel_template = CarouselTemplate(columns=[
             CarouselColumn(
@@ -104,7 +103,9 @@ def send_menu(event):
                 title="Taco",
                 text="請選擇 Taco 作為主餐",
                 actions=[
-                    PostbackAction(label="選擇 Taco", data="主餐_Taco")
+                    PostbackAction(label="選擇雞肉Taco", data="主餐_雞肉Taco"),
+                    PostbackAction(label="選擇牛肉Taco", data="主餐_牛肉Taco"),
+                    PostbackAction(label="選擇豬肉Taco", data="主餐_豬肉Taco"),
                 ]
             ),
             CarouselColumn(
@@ -112,7 +113,9 @@ def send_menu(event):
                 title="Taco Bowl",
                 text="請選擇 Taco Bowl 作為主餐",
                 actions=[
-                    PostbackAction(label="選擇 Taco Bowl", data="主餐_TacoBowl")
+                    PostbackAction(label="選擇雞肉TacoBowl", data="主餐_雞肉TacoBowl"),
+                    PostbackAction(label="選擇牛肉TacoBowl", data="主餐_牛肉TacoBowl"),
+                    PostbackAction(label="選擇豬肉TacoBowl", data="主餐_豬肉TacoBowl"),
                 ]
             )
         ])
