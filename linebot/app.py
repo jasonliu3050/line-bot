@@ -3,6 +3,11 @@ from flask import Flask, request, abort
 from linebot.v3.messaging import MessagingApi  # ✅ v3 版本
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.models import TextSendMessage, MessageEvent
+from linebot.v3.messaging import LineBotApi  # ✅ 引入 LineBotApi
+line_bot_api = LineBotApi(channel_access_token=LINE_CHANNEL_ACCESS_TOKEN)
+from linebot.v3.webhook import PostbackEvent
+from linebot.v3.messaging import TemplateSendMessage, CarouselTemplate, CarouselColumn, PostbackAction
+
 
 # ✅ 先正确读取环境变量
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
@@ -337,21 +342,51 @@ def checkout_order(event, user_id):
     else:
         order_details = ""
         total = 0
+
         for item in user_cart[user_id]["items"]:
-            # 主餐價格
-            item_total = menu["主餐"].get(item["主餐"], 0) * item["數量"]
-            
-            # 加入配料價格
-            item_total += sum(menu["配料"].get(topping, 0) for topping in item["配料"])
-            
-            # 加入醬料價格
-            item_total += sum(menu["醬汁"].get(sauce, 0) for sauce in item["醬料"])
-            
+            主餐 = item.get("主餐", "")
+            肉類 = item.get("肉類", "")
+            配料 = item.get("配料", [])
+            醬料 = item.get("醬料", [])
+            數量 = item.get("數量", 1)
+
+            # **主餐價格**
+            item_total = menu["主餐"].get(主餐, 0) * 數量
+
+            # **肉類價格**（假設肉類價格與 Taco 相同）
+            if 肉類:
+                item_total += menu["主餐"].get(f"{肉類}Taco", 0) * 數量
+
+            # **配料價格**
+            item_total += sum(menu["配料"].get(topping, 0) for topping in 配料) * 數量
+
+            # **醬料價格**
+            item_total += sum(menu["醬汁"].get(sauce, 0) for sauce in 醬料) * 數量
+
             total += item_total
             order_details += (
-                f"{item['數量']} 份 {item['主餐']}，肉類：{item['肉類']}，"
-                f"配料：{', '.join(item['配料'])}，醬料：{', '.join(item['醬料'])}，小計：{item_total} 元\n"
+                f"{數量} 份 {主餐}，肉類：{肉類}，"
+                f"配料：{', '.join(配料) if 配料 else '無'}，"
+                f"醬料：{', '.join(醬料) if 醬料 else '無'}，"
+                f"小計：{item_total} 元\n"
             )
+
+        # **折扣计算**
+        discount = 0.9 if total >= 200 else 1.0
+        final_price = int(total * discount)
+
+        reply_text = (
+            f"你的訂單如下：\n{order_details}"
+            f"總金額：{total} 元\n"
+            f"折扣後金額：{final_price} 元\n"
+            f"請使用以下 Line Pay 付款連結：\nhttps://pay.line.me/123456789"
+        )
+
+        # **清空購物車**
+        user_cart[user_id] = {"items": []}
+
+    line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+
 
         # 折扣處理
         discount = 0.9 if total >= 200 else 1.0
