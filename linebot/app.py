@@ -5,6 +5,7 @@ from linebot.v3.messaging import MessagingApi
 from linebot.v3.messaging.models import TextMessage  # ✅ 修正 `TextSendMessage` 为 `TextMessage`
 from linebot.v3.webhook import PostbackEvent, MessageEvent
 from linebot.v3.messaging.models import TemplateSendMessage, CarouselTemplate, CarouselColumn, PostbackAction
+from linebot.v3.messaging.models.events import PostbackEvent, MessageEvent
 
 
 
