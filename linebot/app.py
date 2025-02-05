@@ -13,8 +13,8 @@ LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 # ✅ 初始化 Flask 应用
 app = Flask(__name__)
 
-# ✅ 正确初始化 MessagingApi（v3）
-messaging_api = MessagingApi(channel_access_token=LINE_CHANNEL_ACCESS_TOKEN)
+# ✅ 初始化 LINE Bot API
+line_bot_api = LineBotApi(channel_access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 
