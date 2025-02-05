@@ -92,6 +92,7 @@ def handle_message(event):
 
 
 
+
 def send_menu(event):
     """發送主選單（獨立的 Taco 和 Taco Bowl 選單）"""
     print("[DEBUG] 發送主選單")  # DEBUG LOG
@@ -103,9 +104,7 @@ def send_menu(event):
                 title="Taco",
                 text="請選擇 Taco 作為主餐",
                 actions=[
-                    PostbackAction(label="選擇雞肉 Taco", data="主餐_雞肉Taco"),
-                    PostbackAction(label="選擇牛肉 Taco", data="主餐_牛肉Taco"),
-                    PostbackAction(label="選擇豬肉 Taco", data="主餐_豬肉Taco"),
+                    PostbackAction(label="選擇 Taco", data="主餐_Taco")
                 ]
             ),
             CarouselColumn(
@@ -113,9 +112,7 @@ def send_menu(event):
                 title="Taco Bowl",
                 text="請選擇 Taco Bowl 作為主餐",
                 actions=[
-                    PostbackAction(label="選擇雞肉 Taco Bowl", data="主餐_雞肉TacoBowl"),
-                    PostbackAction(label="選擇牛肉 Taco Bowl", data="主餐_牛肉TacoBowl"),
-                    PostbackAction(label="選擇豬肉 Taco Bowl", data="主餐_豬肉TacoBowl"),
+                    PostbackAction(label="選擇 Taco Bowl", data="主餐_TacoBowl")
                 ]
             )
         ])
@@ -134,6 +131,10 @@ def send_menu(event):
         )
 
 
+
+
+
+
 @handler.add(PostbackEvent)
 def handle_postback(event):
     try:
@@ -144,98 +145,64 @@ def handle_postback(event):
         print(f"[DEBUG] 收到 Postback 資料: {postback_data}")
         print(f"[DEBUG] 用戶 ID: {user_id}")
 
-        # ✅ 確保購物車初始化
+        # 初始化購物車
         if user_id not in user_cart:
             user_cart[user_id] = {"items": [], "current_item": None}
 
         # **主餐選擇**
         if postback_data.startswith("主餐_"):
             selected_main = postback_data.replace("主餐_", "")
-            user_cart[user_id]["current_item"] = {
-                "主餐": selected_main,
-                "肉類": None,
-                "配料": [],
-                "醬料": [],
-                "數量": None
-            }
+            user_cart[user_id]["current_item"] = {"主餐": selected_main, "肉類": None, "配料": [], "醬料": [], "數量": None}
             print(f"[DEBUG] 用戶選擇主餐: {selected_main}")
             send_meat_menu(event, selected_main)
-            return
 
         # **肉類選擇**
         elif postback_data.startswith("肉_"):
             selected_meat = postback_data.replace("肉_", "")
             if not user_cart[user_id]["current_item"]:
-                print("[ERROR] 用戶未選擇主餐，無法選擇肉類！")
-                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="請先選擇主餐！")])
-                return
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇肉類！")
             user_cart[user_id]["current_item"]["肉類"] = selected_meat
             print(f"[DEBUG] 用戶選擇肉類: {selected_meat}")
             send_toppings_menu(event)
-            return
 
         # **配料選擇**
         elif postback_data.startswith("配料_"):
             selected_topping = postback_data.replace("配料_", "")
             if not user_cart[user_id]["current_item"]:
-                print("[ERROR] 用戶未選擇主餐，無法選擇配料！")
-                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="請先選擇主餐與肉類！")])
-                return
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇配料！")
             user_cart[user_id]["current_item"]["配料"].append(selected_topping)
             print(f"[DEBUG] 用戶選擇配料: {selected_topping}")
             send_sauce_menu(event)
-            return
 
         # **醬料選擇**
         elif postback_data.startswith("醬料_"):
             selected_sauce = postback_data.replace("醬料_", "")
             if not user_cart[user_id]["current_item"]:
-                print("[ERROR] 用戶未選擇主餐，無法選擇醬料！")
-                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="請先選擇主餐與肉類！")])
-                return
-            
-            # 限制最多 3 種醬料
-            if len(user_cart[user_id]["current_item"]["醬料"]) >= 3:
-                print("[ERROR] 已達醬料選擇上限")
-                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="最多可選 3 種醬料！")])
-                return
-
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇醬料！")
             user_cart[user_id]["current_item"]["醬料"].append(selected_sauce)
             print(f"[DEBUG] 用戶選擇醬料: {selected_sauce}")
-
-            # **達到醬料上限，進入數量選擇**
-            if len(user_cart[user_id]["current_item"]["醬料"]) == 3:
-                send_quantity_menu(event)
-            else:
-                send_sauce_menu(event)  # 允許繼續選擇醬料
-            return
+            send_quantity_menu(event)
 
         # **數量選擇**
         elif postback_data.startswith("數量_"):
             selected_quantity = int(postback_data.replace("數量_", ""))
             if not user_cart[user_id]["current_item"]:
-                print("[ERROR] current_item 未初始化，無法選擇數量！")
-                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="請先選擇主餐與肉類！")])
-                return
-
+                raise ValueError("[ERROR] current_item 未初始化，無法選擇數量！")
             user_cart[user_id]["current_item"]["數量"] = selected_quantity
-            user_cart[user_id]["items"].append(user_cart[user_id]["current_item"])
-            user_cart[user_id]["current_item"] = None  # 清空 current_item，避免影響下次點餐
-
+            user_cart[user_id]["items"].append(user_cart[user_id].pop("current_item"))
+            current_item = user_cart[user_id]["items"][-1]
             reply_text = (
                 f"你已完成一份訂單：\n"
-                f"{selected_quantity} 份 {user_cart[user_id]['items'][-1]['主餐']}，"
-                f"肉類：{user_cart[user_id]['items'][-1]['肉類']}，"
-                f"配料：{', '.join(user_cart[user_id]['items'][-1]['配料']) if user_cart[user_id]['items'][-1]['配料'] else '無'}，"
-                f"醬料：{', '.join(user_cart[user_id]['items'][-1]['醬料']) if user_cart[user_id]['items'][-1]['醬料'] else '無'}\n"
+                f"{current_item['數量']} 份 {current_item['主餐']}，"
+                f"肉類：{current_item['肉類']}，"
+                f"配料：{', '.join(current_item['配料'])}，"
+                f"醬料：{', '.join(current_item['醬料'])}\n"
                 f"目前購物車內有 {len(user_cart[user_id]['items'])} 筆訂單。"
             )
-
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
-            return
 
     except Exception as e:
-        print(f"[ERROR] 在 handle_postback 中發生錯誤: {e}")
+        print(f"[ERROR] 在 handle_postback 中發生錯誤: {e}")  # 捕获详细错误
         line_bot_api.reply_message(
             event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")]
         )
