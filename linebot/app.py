@@ -1,11 +1,9 @@
 import os
 from flask import Flask, request, abort
-from linebot.v3.messaging import MessagingApi  # ✅ v3 版本
-from linebot.v3.webhook import WebhookHandler
-from linebot.v3.models import TextSendMessage, MessageEvent
+from linebot.v3.messaging import TextSendMessage, MessagingApi
+from linebot.v3.webhook import WebhookHandler, PostbackEvent, MessageEvent
 from linebot.v3.messaging import LineBotApi  # ✅ 引入 LineBotApi
 line_bot_api = LineBotApi(channel_access_token=LINE_CHANNEL_ACCESS_TOKEN)
-from linebot.v3.webhook import PostbackEvent
 from linebot.v3.messaging import TemplateSendMessage, CarouselTemplate, CarouselColumn, PostbackAction
 
 
