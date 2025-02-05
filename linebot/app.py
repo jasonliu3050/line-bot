@@ -219,29 +219,67 @@ def handle_postback(event):
                 send_sauce_menu(event)  # 允許繼續選擇醬料
 
 
-        # **數量選擇**
-        elif postback_data.startswith("數量_"):
-            selected_quantity = int(postback_data.replace("數量_", ""))
-            if not user_cart[user_id]["current_item"]:
-                raise ValueError("[ERROR] current_item 未初始化，無法選擇數量！")
-            user_cart[user_id]["current_item"]["數量"] = selected_quantity
-            user_cart[user_id]["items"].append(user_cart[user_id].pop("current_item"))
-            current_item = user_cart[user_id]["items"][-1]
-            reply_text = (
-                f"你已完成一份訂單：\n"
-                f"{current_item['數量']} 份 {current_item['主餐']}，"
-                f"肉類：{current_item['肉類']}，"
-                f"配料：{', '.join(current_item['配料'])}，"
-                f"醬料：{', '.join(current_item['醬料'])}\n"
-                f"目前購物車內有 {len(user_cart[user_id]['items'])} 筆訂單。"
-            )
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+     # **數量選擇**
+elif postback_data.startswith("數量_"):
+    try:
+        selected_quantity = int(postback_data.replace("數量_", ""))
 
+        # ✅ 确保 user_cart[user_id] 存在
+        if user_id not in user_cart:
+            user_cart[user_id] = {"items": [], "current_item": None}
+
+        # ✅ 确保 current_item 存在
+        if not user_cart[user_id]["current_item"]:
+            print("[ERROR] current_item 未初始化，無法選擇數量！")
+            line_bot_api.reply_message(
+                event.reply_token, [TextSendMessage(text="發生錯誤，請重新開始點餐！")]
+            )
+            return
+
+        # ✅ 确保肉類已经选择
+        if not user_cart[user_id]["current_item"].get("肉類"):
+            print("[ERROR] 肉類未選擇！")
+            line_bot_api.reply_message(
+                event.reply_token, [TextSendMessage(text="請先選擇肉類，再選擇數量！")]
+            )
+            return
+
+        # ✅ 设定數量
+        user_cart[user_id]["current_item"]["數量"] = selected_quantity
+
+        # ✅ 把 current_item 加入 items 并清空 current_item
+        user_cart[user_id]["items"].append(user_cart[user_id]["current_item"])
+        user_cart[user_id]["current_item"] = None  # 清空 current_item，避免影響下次點餐
+
+        # ✅ 获取完整订单信息，防止 KeyError
+        current_item = user_cart[user_id]["items"][-1]
+        主餐 = current_item.get("主餐", "未知主餐")
+        肉類 = current_item.get("肉類", "未知肉類")
+        配料 = current_item.get("配料", [])
+        醬料 = current_item.get("醬料", [])
+
+        # ✅ 生成回應訊息
+        reply_text = (
+            f"你已完成一份訂單：\n"
+            f"{selected_quantity} 份 {主餐}，肉類：{肉類}，"
+            f"配料：{', '.join(配料) if 配料 else '無'}，"
+            f"醬料：{', '.join(醬料) if 醬料 else '無'}\n"
+            f"目前購物車內有 {len(user_cart[user_id]['items'])} 筆訂單。"
+        )
+
+        line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
+
+    except ValueError:
+        print("[ERROR] 無效的數量數據")
+        line_bot_api.reply_message(
+            event.reply_token, [TextSendMessage(text="請選擇有效的數量！")]
+        )
     except Exception as e:
-        print(f"[ERROR] 在 handle_postback 中發生錯誤: {e}")  # 捕获详细错误
+        print(f"[ERROR] 在 handle_postback 數量選擇時發生錯誤: {e}")
         line_bot_api.reply_message(
             event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")]
         )
+
 
 
 
