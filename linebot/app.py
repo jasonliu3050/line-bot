@@ -149,6 +149,16 @@ def handle_postback(event):
             user_cart[user_id] = {"items": [], "current_item": None}
 
         current_item = user_cart[user_id]["current_item"]
+                # 確保 current_item 存在
+        if user_cart[user_id]["current_item"] is None:
+            user_cart[user_id]["current_item"] = {
+                "主餐": None,
+                "套餐": None,
+                "配料": [],
+                "飲料": None,
+                "數量": None
+            }
+
 
         # 處理主餐選擇
         if postback_data.startswith("主餐_塔可"):
