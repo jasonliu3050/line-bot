@@ -103,7 +103,9 @@ def send_menu(event):
                 title="Taco",
                 text="請選擇 Taco 作為主餐",
                 actions=[
-                    PostbackAction(label="Taco", data="主餐_Taco")
+                    PostbackAction(label="豬肉Taco", data="主餐_豬肉Taco"),
+                    PostbackAction(label="雞肉Taco", data="主餐_雞肉Taco"),
+                    PostbackAction(label="牛肉Taco", data="主餐_牛肉Taco"),
                 ]
             ),
             CarouselColumn(
@@ -111,7 +113,9 @@ def send_menu(event):
                 title="Taco Bowl",
                 text="請選擇 Taco Bowl 作為主餐",
                 actions=[
-                    PostbackAction(label="選擇TacoBowl", data="主餐_TacoBowl")
+                    PostbackAction(label="豬肉TacoBowl", data="主餐_豬肉TacoBowl"),
+                    PostbackAction(label="雞肉TacoBowl", data="主餐_雞肉TacoBowl"),
+                    PostbackAction(label="牛肉TacoBowl", data="主餐_牛肉TacoBowl"),
                 ]
             )
         ])
