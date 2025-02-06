@@ -76,6 +76,9 @@ def handle_message(event):
                 cart_details += f"{item['數量']} 份 {item['主餐']}，配料：{', '.join(item['配料']) if item['配料'] else '無'}，飲料：{item['飲料'] if item['飲料'] else '無'}\n"
 
             reply_text = f"你的購物車內容：\n{cart_details}"
+    elif user_message == "我要點餐":
+        send_menu(event)
+        return
 
     elif user_message == "結帳":
         checkout_order(event, user_id)
