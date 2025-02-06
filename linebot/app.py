@@ -181,83 +181,36 @@ def handle_postback(event):
             user_cart[user_id]["current_item"]["飲料"] = selected_drink
             send_quantity_menu(event)
             return
-
-        elif postback_data.startswith("數量_"):
-            selected_quantity = int(postback_data.replace("數量_", ""))
-            user_cart[user_id]["current_item"]["數量"] = selected_quantity
-            user_cart[user_id]["items"].append(user_cart[user_id]["current_item"])
-            user_cart[user_id]["current_item"] = None
-            ask_if_need_more(event)
-            return
-
-        elif postback_data == "更多_是":
-            send_menu(event)
-            return
-
-        elif postback_data == "更多_否":
-            checkout_order(event, user_id)
-            return
     
     except Exception as e:
         print(f"[ERROR] handle_postback() 錯誤: {e}")
         line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")])
 
 
-def send_meat_menu(event, selected_main):
+def send_quantity_menu(event):
     try:
-        carousel_template = CarouselTemplate(columns=[
-            CarouselColumn(
-                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
-                title=f"選擇 {selected_main} 的肉類",
-                text="請選擇你想要的肉類：",
-                actions=[
-                    PostbackAction(label="雞肉", data="肉_雞肉"),
-                    PostbackAction(label="牛肉", data="肉_牛肉"),
-                    PostbackAction(label="豬肉", data="肉_豬肉"),
-                ]
-            )
-        ])
-
-        line_bot_api.reply_message(event.reply_token, [TemplateSendMessage(alt_text="請選擇肉類", template=carousel_template)])
-
+        message = TextSendMessage(text="請輸入您想要的數量（例如：2）")
+        line_bot_api.reply_message(event.reply_token, message)
     except Exception as e:
-        print(f"[ERROR] 發送肉類選單時出現錯誤: {e}")
+        print(f"[ERROR] 發送數量請求時出現錯誤: {e}")
 
 
-def send_toppings_menu(event):
-    carousel_template = CarouselTemplate(columns=[
-        CarouselColumn(
-            thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
-            title="選擇你的配料",
-            text="請選擇你想加的配料",
-            actions=[
-                PostbackAction(label="香菜 (+$10)", data="配料_香菜"),
-                PostbackAction(label="酪梨醬 (+$20)", data="配料_酪梨醬"),
-                PostbackAction(label="紅椒醬 (+$20)", data="配料_紅椒醬"),
-            ]
-        )
-    ])
-    line_bot_api.reply_message(event.reply_token, [TemplateSendMessage(alt_text="請選擇配料", template=carousel_template)])
-
-
-def send_sauce_menu(event):
+@handler.add(MessageEvent)
+def handle_message(event):
     try:
-        carousel_template = CarouselTemplate(columns=[
-            CarouselColumn(
-                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
-                title="選擇醬料",
-                text="最多可選三種醬料：",
-                actions=[
-                    PostbackAction(label="紅椒醬 (+$20)", data="醬料_紅椒醬"),
-                    PostbackAction(label="酪梨醬 (+$20)", data="醬料_酪梨醬"),
-                    PostbackAction(label="莎莎醬 (+$15)", data="醬料_莎莎醬"),
-                ]
-            )
-        ])
-        line_bot_api.reply_message(event.reply_token, [TemplateSendMessage(alt_text="請選擇醬料", template=carousel_template)])
-    except Exception as e:
-        print(f"[ERROR] 發送醬料選單時出現錯誤: {e}")
+        user_id = event.source.user_id
+        user_message = event.message.text.strip()
 
+        if user_id in user_cart and user_cart[user_id]["current_item"] and user_message.isdigit():
+            selected_quantity = int(user_message)
+            user_cart[user_id]["current_item"]["數量"] = selected_quantity
+            user_cart[user_id]["items"].append(user_cart[user_id]["current_item"])
+            user_cart[user_id]["current_item"] = None
+            ask_if_need_more(event)
+        else:
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="請輸入有效的數字！")])
+    except Exception as e:
+        print(f"[ERROR] 處理數量輸入時出現錯誤: {e}")
 
 
 
