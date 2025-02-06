@@ -157,7 +157,7 @@ def handle_postback(event):
                 "飲料": None,
                 "數量": None
             }
-            send_quantity_menu(event)
+            send_side_menu(event)
             return
 
         elif postback_data.startswith("選擇_單點"):
@@ -204,7 +204,7 @@ def send_side_menu(event):
             CarouselColumn(
                 thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
                 title="side",
-                text="請選擇 Taco 作為主餐",
+                text="請選擇 side",
                 actions=[
                     PostbackAction(label="玉米脆片", data="side_玉米脆片"),
                     PostbackAction(label="墨西哥風味飯", data="side_墨西哥風味飯"),
@@ -225,6 +225,52 @@ def send_side_menu(event):
             event.reply_token,
             [TextSendMessage(text="發送side時發生錯誤，請稍後再試！")]
         )
+
+
+
+
+
+
+def send_drink_menu(event):
+   
+    print("[DEBUG] 發送")  # DEBUG LOG
+
+    try:
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+                title="drink",
+                text="請選擇 drink",
+                actions=[
+                    PostbackAction(label="咖啡", data="drink_咖啡"),
+                ]
+            )
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+                title="drink",
+                text="請選擇 drink",
+                actions=[
+                    PostbackAction(label="紅茶", data="drink_紅茶"),
+                ]
+            )
+        ])
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TemplateSendMessage(alt_text="請選擇drink", template=carousel_template)]
+        )
+        print("[DEBUG] side發送成功")
+
+    except Exception as e:
+        print(f"[ERROR] 發送drink時發生錯誤: {e}")
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextSendMessage(text="發送drink時發生錯誤，請稍後再試！")]
+        )
+
+
+
 
 
 
