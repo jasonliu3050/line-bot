@@ -161,7 +161,7 @@ def handle_postback(event):
         current_item = user_cart[user_id]["current_item"]
 
         # 🏆【修正1】主餐選擇：這裡不能直接覆蓋 current_item，而是要更新它
-        if postback_data.startswith("主餐_塔可"):
+        if postback_data.startswith("主餐_"):
             selected_main = postback_data.replace("主餐_", "")
             user_cart[user_id]["current_item"]["主餐"] = selected_main
             send_singleormeal_menu(event)
