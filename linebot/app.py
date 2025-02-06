@@ -103,9 +103,9 @@ def send_menu(event):
                 title="Taco",
                 text="請選擇 Taco 作為主餐",
                 actions=[
-                    PostbackAction(label="豬肉Taco", data="選擇_塔可豬肉"),
-                    PostbackAction(label="雞肉Taco", data="選擇_塔可雞肉"),
-                    PostbackAction(label="牛肉Taco", data="選擇_塔可牛肉"),
+                    PostbackAction(label="豬肉Taco", data="主餐_塔可豬肉"),
+                    PostbackAction(label="雞肉Taco", data="主餐_塔可雞肉"),
+                    PostbackAction(label="牛肉Taco", data="主餐_塔可牛肉"),
                 ]
             ),
             CarouselColumn(
@@ -113,9 +113,9 @@ def send_menu(event):
                 title="Taco Bowl",
                 text="請選擇 Taco Bowl 作為主餐",
                 actions=[
-                    PostbackAction(label="豬肉TacoBowl", data="選擇_塔可豬肉"),
-                    PostbackAction(label="雞肉TacoBowl", data="選擇_塔可雞肉"),
-                    PostbackAction(label="牛肉TacoBowl", data="選擇_塔可牛肉"),
+                    PostbackAction(label="豬肉TacoBowl", data="主餐_塔可豬肉"),
+                    PostbackAction(label="雞肉TacoBowl", data="主餐_塔可雞肉"),
+                    PostbackAction(label="牛肉TacoBowl", data="主餐_塔可牛肉"),
                 ]
             )
         ])
@@ -148,8 +148,8 @@ def handle_postback(event):
 
         current_item = user_cart[user_id]["current_item"]
 
-        if postback_data.startswith("選擇_塔可"):
-            selected_main = postback_data.replace("選擇_", "")
+        if postback_data.startswith("主餐_塔可"):
+            selected_main = postback_data.replace("主餐_", "")
             user_cart[user_id]["current_item"] = {
                 "主餐": selected_main,
                 "套餐": False,
@@ -157,7 +157,7 @@ def handle_postback(event):
                 "飲料": None,
                 "數量": None
             }
-            send_single_or_meal(event)
+            send_quantity_menu(event)
             return
 
         elif postback_data.startswith("選擇_單點"):
