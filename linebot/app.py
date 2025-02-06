@@ -157,21 +157,17 @@ def handle_postback(event):
                 "飲料": None,
                 "數量": None
             }
+            send_singleormeal_menu(event)
+            return
+
+        elif postback_data.startswith("singleormeal_單點"):
+            selected_side = postback_data.replace("singleormeal_", "")
+            user_cart[user_id]["current_item"]["配料"].append(selected_side)
             send_side_menu(event)
             return
 
-        elif postback_data.startswith("選擇_單點"):
-            user_cart[user_id]["current_item"]["套餐"] = False
-            send_quantity_menu(event)
-            return
-
-        elif postback_data.startswith("選擇_套餐"):
-            user_cart[user_id]["current_item"]["套餐"] = True
-            send_side_menu(event)
-            return
-
-        elif postback_data.startswith("選擇_Side_"):
-            selected_side = postback_data.replace("選擇_Side_", "")
+        elif postback_data.startswith("選擇_side_"):
+            selected_side = postback_data.replace("side_", "")
             user_cart[user_id]["current_item"]["配料"].append(selected_side)
             send_drink_menu(event)
             return
@@ -187,12 +183,54 @@ def handle_postback(event):
         line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")])
 
 
+
+
+def send_singleormeal_menu(event):
+   
+    print("[DEBUG] 發送")  # DEBUG LOG
+
+    try:
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+                title="side",
+                text="請選擇 side",
+                actions=[
+                    PostbackAction(label="單點", data="singleormeal_單點"),
+                    PostbackAction(label="套餐", data="singleormeal_套餐")
+                ]
+            )
+        ])
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TemplateSendMessage(alt_text="請選擇singleormeal", template=carousel_template)]
+        )
+        print("[DEBUG] singleormeal發送成功")
+
+    except Exception as e:
+        print(f"[ERROR] 發送singleormeal_時發生錯誤: {e}")
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextSendMessage(text="發送singleormeal_時發生錯誤，請稍後再試！")]
+        )
+
+
+
+
+
+
+
 def send_quantity_menu(event):
     try:
         message = TextSendMessage(text="請輸入您想要的數量（例如：2）")
         line_bot_api.reply_message(event.reply_token, message)
     except Exception as e:
         print(f"[ERROR] 發送數量請求時出現錯誤: {e}")
+
+
+
+
 
 
 def send_side_menu(event):
