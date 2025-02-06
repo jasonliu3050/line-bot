@@ -8,6 +8,31 @@ from linebot.models import (
     CarouselTemplate, CarouselColumn, TemplateSendMessage
 )
 import os
+from linebot import LineBotApi
+from linebot.models import RichMenu, RichMenuArea, RichMenuBounds, PostbackAction
+
+line_bot_api = LineBotApi("你的 Channel Access Token")
+
+# 创建富菜单
+rich_menu_to_create = RichMenu(
+    size={"width": 2500, "height": 1686},
+    selected=True,
+    name="主菜单",
+    chat_bar_text="点我选择",
+    areas=[
+        RichMenuArea(
+            bounds=RichMenuBounds(x=0, y=0, width=1250, height=843),
+            action=PostbackAction(data="action=view_menu", label="查看菜单")
+        ),
+        RichMenuArea(
+            bounds=RichMenuBounds(x=1250, y=0, width=1250, height=843),
+            action=PostbackAction(data="action=view_cart", label="查看购物车")
+        )
+    ]
+)
+
+rich_menu_id = line_bot_api.create_rich_menu(rich_menu=rich_menu_to_create)
+print(f"Rich Menu ID: {rich_menu_id}")
 
 
 app = Flask(__name__)
