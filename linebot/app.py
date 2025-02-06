@@ -63,7 +63,7 @@ def handle_message(event):
     user_message = event.message.text.strip()
 
     if user_id not in user_cart:
-    user_cart[user_id] = {"items": [], "current_item": None}
+        user_cart[user_id] = {"items": [], "current_item": None}
 
     if user_message == "我要點餐":
         send_menu(event)
