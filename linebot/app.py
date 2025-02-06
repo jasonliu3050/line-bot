@@ -143,11 +143,14 @@ def handle_postback(event):
         user_id = event.source.user_id
         postback_data = event.postback.data
 
+        # 確保用戶有購物車資料
         if user_id not in user_cart:
             user_cart[user_id] = {"items": [], "current_item": None}
 
+        # 取得當前正在編輯的商品
         current_item = user_cart[user_id]["current_item"]
 
+        # 處理主餐選擇
         if postback_data.startswith("主餐_塔可"):
             selected_main = postback_data.replace("主餐_", "")
             user_cart[user_id]["current_item"] = {
@@ -158,40 +161,50 @@ def handle_postback(event):
                 "數量": None
             }
             send_singleormeal_menu(event)
-            return
 
-        elif postback_data.startswith("singleormeal_單點"):
-            selected_side = postback_data.replace("singleormeal_", "")
-            user_cart[user_id]["current_item"]["配料"].append(selected_side)
-            send_side_menu(event)
-            return
-
-        elif postback_data.startswith("side_"):
-            selected_side = postback_data.replace("side_", "")
-            user_cart[user_id]["current_item"]["配料"].append(selected_side)
-            send_drink_menu(event)
-            return
-
-        elif postback_data.startswith("drink_"):
-            selected_drink = postback_data.replace("drink_", "")
-            user_cart[user_id]["current_item"]["飲料"] = selected_drink
-            send_quantity_menu(event)
-            return
-
-        elif postback_data.startswith("confirm_order"):
-            if user_cart[user_id]["current_item"]:
-             user_cart[user_id]["items"].append(user_cart[user_id]["current_item"])
-             user_cart[user_id]["current_item"] = None
-             reply_text = "已將餐點加入購物車！你可以輸入『查看購物車』來查看訂單，或輸入『結帳』完成訂單。"
+        # 處理單點或套餐選擇
+        elif postback_data.startswith("singleormeal_"):
+            if current_item:
+                selected_type = postback_data.replace("singleormeal_", "")
+                current_item["套餐"] = selected_type
+                send_side_menu(event)
             else:
-             reply_text = "請先選擇餐點後再確認！"
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請先選擇主餐！"))
 
+        # 處理配料選擇
+        elif postback_data.startswith("side_"):
+            if current_item:
+                selected_side = postback_data.replace("side_", "")
+                current_item["配料"].append(selected_side)
+                send_drink_menu(event)
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請先選擇主餐！"))
 
+        # 處理飲料選擇
+        elif postback_data.startswith("drink_"):
+            if current_item:
+                selected_drink = postback_data.replace("drink_", "")
+                current_item["飲料"] = selected_drink
+                send_quantity_menu(event)
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請先選擇主餐！"))
 
-    
+        # 確認訂單並加入購物車
+        elif postback_data.startswith("confirm_order"):
+            if current_item:
+                user_cart[user_id]["items"].append(current_item)
+                user_cart[user_id]["current_item"] = None  # 清除當前商品
+                reply_text = "✅ 已將餐點加入購物車！\n輸入『查看購物車』來查看訂單，或輸入『結帳』完成訂單。"
+            else:
+                reply_text = "⚠️ 你的購物車是空的，請先點餐！"
+            
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
     except Exception as e:
         print(f"[ERROR] handle_postback() 錯誤: {e}")
-        line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")])
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 發生錯誤，請稍後再試！"))
+
+
 
 
 
