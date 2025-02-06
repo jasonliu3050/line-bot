@@ -63,7 +63,7 @@ def handle_message(event):
     user_message = event.message.text.strip()
 
     if user_id not in user_cart:
-        user_cart[user_id] = []
+    user_cart[user_id] = {"items": [], "current_item": None}
 
     if user_message == "我要點餐":
         send_menu(event)
@@ -103,9 +103,7 @@ def send_menu(event):
                 title="Taco",
                 text="請選擇 Taco 作為主餐",
                 actions=[
-                    PostbackAction(label="選擇雞肉Taco", data="主餐_雞肉Taco"),
-                    PostbackAction(label="選擇牛肉Taco", data="主餐_牛肉Taco"),
-                    PostbackAction(label="選擇豬肉Taco", data="主餐_豬肉Taco"),
+                    PostbackAction(label="Taco", data="主餐_Taco")
                 ]
             ),
             CarouselColumn(
@@ -113,9 +111,7 @@ def send_menu(event):
                 title="Taco Bowl",
                 text="請選擇 Taco Bowl 作為主餐",
                 actions=[
-                    PostbackAction(label="選擇雞肉TacoBowl", data="主餐_雞肉TacoBowl"),
-                    PostbackAction(label="選擇牛肉TacoBowl", data="主餐_牛肉TacoBowl"),
-                    PostbackAction(label="選擇豬肉TacoBowl", data="主餐_豬肉TacoBowl"),
+                    PostbackAction(label="選擇TacoBowl", data="主餐_TacoBowl")
                 ]
             )
         ])
@@ -150,6 +146,7 @@ def handle_postback(event):
         # ✅ 确保购物车初始化
         if user_id not in user_cart:
             user_cart[user_id] = {"items": [], "current_item": None}
+
 
         # ✅ **主餐选择**
         if postback_data.startswith("主餐_"):
