@@ -177,6 +177,17 @@ def handle_postback(event):
             user_cart[user_id]["current_item"]["飲料"] = selected_drink
             send_quantity_menu(event)
             return
+
+        elif postback_data.startswith("confirm_order"):
+            if user_cart[user_id]["current_item"]:
+            user_cart[user_id]["items"].append(user_cart[user_id]["current_item"])
+            user_cart[user_id]["current_item"] = None
+            reply_text = "已將餐點加入購物車！你可以輸入『查看購物車』來查看訂單，或輸入『結帳』完成訂單。"
+            else:
+            reply_text = "請先選擇餐點後再確認！"
+
+
+
     
     except Exception as e:
         print(f"[ERROR] handle_postback() 錯誤: {e}")
