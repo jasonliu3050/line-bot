@@ -138,7 +138,6 @@ def send_menu(event):
 
 
 
-@handler.add(PostbackEvent)
 def handle_postback(event):
     try:
         user_id = event.source.user_id
@@ -148,8 +147,7 @@ def handle_postback(event):
         if user_id not in user_cart:
             user_cart[user_id] = {"items": [], "current_item": None}
 
-        current_item = user_cart[user_id]["current_item"]
-                # 確保 current_item 存在
+        # 確保 current_item 存在
         if user_cart[user_id]["current_item"] is None:
             user_cart[user_id]["current_item"] = {
                 "主餐": None,
@@ -159,45 +157,47 @@ def handle_postback(event):
                 "數量": None
             }
 
+        current_item = user_cart[user_id]["current_item"]
 
-        # 處理主餐選擇
+        # 🏆【修正1】主餐選擇：這裡不能直接覆蓋 current_item，應該修改現有物件
         if postback_data.startswith("主餐_塔可"):
             selected_main = postback_data.replace("主餐_", "")
-            user_cart[user_id]["current_item"] = {
-                "主餐": selected_main,
-                "套餐": None,
-                "配料": [],
-                "飲料": None,
-                "數量": None
-            }
+            current_item["主餐"] = selected_main
             send_singleormeal_menu(event)
 
         elif postback_data.startswith("singleormeal_"):
-            if current_item:
+            if current_item["主餐"]:  # 確保已經有主餐
                 selected_type = postback_data.replace("singleormeal_", "")
                 current_item["套餐"] = selected_type
                 send_side_menu(event)
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請先選擇主餐！"))
 
         elif postback_data.startswith("side_"):
-            if current_item:
+            if current_item["主餐"]:
                 selected_side = postback_data.replace("side_", "")
                 current_item["配料"].append(selected_side)
                 send_drink_menu(event)
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請先選擇主餐！"))
 
         elif postback_data.startswith("drink_"):
-            if current_item:
+            if current_item["主餐"]:
                 selected_drink = postback_data.replace("drink_", "")
                 current_item["飲料"] = selected_drink
                 send_quantity_menu(event)
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請先選擇主餐！"))
 
         elif postback_data.startswith("quantity_"):
-            if current_item:
+            if current_item["主餐"]:
                 selected_quantity = int(postback_data.replace("quantity_", ""))
                 current_item["數量"] = selected_quantity  # 記錄數量
 
-                # **加入購物車**
-                user_cart[user_id]["items"].append(current_item)
-                user_cart[user_id]["current_item"] = None  # 清除當前商品
+                # ✅ 【修正2】確保 `current_item` 被正確存入購物車
+                user_cart[user_id]["items"].append(current_item.copy())  # **使用 `.copy()` 避免清空問題**
+                user_cart[user_id]["current_item"] = None  # 清除當前商品，準備下一次點餐
+
                 reply_text = "✅ 已將餐點加入購物車！\n輸入『查看購物車』來查看訂單，或輸入『結帳』完成訂單。"
             else:
                 reply_text = "⚠️ 請先選擇主餐！"
@@ -207,6 +207,7 @@ def handle_postback(event):
     except Exception as e:
         print(f"[ERROR] handle_postback() 錯誤: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 發生錯誤，請稍後再試！"))
+
 
 
 
