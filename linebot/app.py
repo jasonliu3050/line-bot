@@ -143,14 +143,12 @@ def handle_postback(event):
         user_id = event.source.user_id
         postback_data = event.postback.data
 
-        # 確保購物車初始化
         if user_id not in user_cart:
             user_cart[user_id] = {"items": [], "current_item": None}
 
         current_item = user_cart[user_id]["current_item"]
 
-        # ✅ **步驟 1: 選擇塔可或塔可碗 + 口味**
-        if postback_data.startswith("選擇_塔可"): 
+        if postback_data.startswith("選擇_塔可"):
             selected_main = postback_data.replace("選擇_", "")
             user_cart[user_id]["current_item"] = {
                 "主餐": selected_main,
@@ -162,24 +160,16 @@ def handle_postback(event):
             send_single_or_meal(event)
             return
 
-        # ✅ **步驟 2: 單點或套餐選擇**
-        elif postback_data.startswith("選擇_單點"): 
-            if not current_item:
-                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="請先選擇塔可或塔可碗！")])
-                return
+        elif postback_data.startswith("選擇_單點"):
             user_cart[user_id]["current_item"]["套餐"] = False
             send_quantity_menu(event)
             return
 
-        elif postback_data.startswith("選擇_套餐"): 
-            if not current_item:
-                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="請先選擇塔可或塔可碗！")])
-                return
+        elif postback_data.startswith("選擇_套餐"):
             user_cart[user_id]["current_item"]["套餐"] = True
             send_side_and_drink_menu(event)
             return
 
-        # ✅ **步驟 3: 選擇套餐的 Side & 飲料**
         elif postback_data.startswith("選擇_Side_"):
             selected_side = postback_data.replace("選擇_Side_", "")
             user_cart[user_id]["current_item"]["配料"].append(selected_side)
@@ -192,7 +182,6 @@ def handle_postback(event):
             send_quantity_menu(event)
             return
 
-        # ✅ **步驟 4: 選擇數量**
         elif postback_data.startswith("數量_"):
             selected_quantity = int(postback_data.replace("數量_", ""))
             user_cart[user_id]["current_item"]["數量"] = selected_quantity
@@ -201,7 +190,6 @@ def handle_postback(event):
             ask_if_need_more(event)
             return
 
-        # ✅ **步驟 5: 詢問是否還需要其他東西**
         elif postback_data == "更多_是":
             send_menu(event)
             return
@@ -215,18 +203,11 @@ def handle_postback(event):
         line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="發生錯誤，請稍後再試！")])
 
 
-
-
-
-
 def send_meat_menu(event, selected_main):
-    """發送肉類選擇菜單（對應 Taco 或 Taco Bowl）"""
-    print(f"[DEBUG] 發送肉類選單給用戶，主餐: {selected_main}")  # **DEBUG LOG**
-    
     try:
         carousel_template = CarouselTemplate(columns=[
             CarouselColumn(
-                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 確保圖片 URL 可用
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
                 title=f"選擇 {selected_main} 的肉類",
                 text="請選擇你想要的肉類：",
                 actions=[
@@ -237,20 +218,13 @@ def send_meat_menu(event, selected_main):
             )
         ])
 
-        line_bot_api.reply_message(
-            event.reply_token,
-            [TemplateSendMessage(alt_text="請選擇肉類", template=carousel_template)]
-        )
+        line_bot_api.reply_message(event.reply_token, [TemplateSendMessage(alt_text="請選擇肉類", template=carousel_template)])
 
     except Exception as e:
-        print(f"[ERROR] 發送肉類選單時出現錯誤: {e}")  # **輸出錯誤資訊**
-
-
-
+        print(f"[ERROR] 發送肉類選單時出現錯誤: {e}")
 
 
 def send_toppings_menu(event):
-    """發送配料選擇菜單"""
     carousel_template = CarouselTemplate(columns=[
         CarouselColumn(
             thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
@@ -263,23 +237,14 @@ def send_toppings_menu(event):
             ]
         )
     ])
-
-    line_bot_api.reply_message(
-        event.reply_token,
-        [TemplateSendMessage(alt_text="請選擇配料", template=carousel_template)]
-    )
-
+    line_bot_api.reply_message(event.reply_token, [TemplateSendMessage(alt_text="請選擇配料", template=carousel_template)])
 
 
 def send_sauce_menu(event):
-    """發送醬料選擇菜單"""
-    print("[DEBUG] 發送醬料選單")  # DEBUG LOG
-    
     try:
-        # 構建 CarouselTemplate
         carousel_template = CarouselTemplate(columns=[
             CarouselColumn(
-                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",  # 確保圖片可用
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
                 title="選擇醬料",
                 text="最多可選三種醬料：",
                 actions=[
@@ -289,20 +254,12 @@ def send_sauce_menu(event):
                 ]
             )
         ])
-        
-        # 發送消息
-        line_bot_api.reply_message(
-            event.reply_token,
-            [TemplateSendMessage(alt_text="請選擇醬料", template=carousel_template)]
-        )
-
+        line_bot_api.reply_message(event.reply_token, [TemplateSendMessage(alt_text="請選擇醬料", template=carousel_template)])
     except Exception as e:
-        # 捕獲並打印錯誤信息
-        print(f"[ERROR] 發送醬料選單時出現錯誤: {e}")  # DEBUG LOG
-        line_bot_api.reply_message(
-            event.reply_token,
-            [TextSendMessage(text="發送醬料選單時發生錯誤，請稍後再試！")]
-        )
+        print(f"[ERROR] 發送醬料選單時出現錯誤: {e}")
+
+
+
 
 
 
