@@ -283,6 +283,7 @@ def send_drink_menu(event):
                     PostbackAction(label="咖啡", data="drink_咖啡"),
                 ]
             )
+        ])
         carousel_template = CarouselTemplate(columns=[
             CarouselColumn(
                 thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
