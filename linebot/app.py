@@ -152,9 +152,9 @@ def handle_postback(event):
             selected_main = postback_data.replace("主餐_", "")
             user_cart[user_id]["current_item"] = {
                 "主餐": selected_main,
-                "套餐": False,
+                "套餐": [],
                 "配料": [],
-                "飲料": None,
+                "飲料": [],
                 "數量": None
             }
             send_singleormeal_menu(event)
@@ -166,14 +166,14 @@ def handle_postback(event):
             send_side_menu(event)
             return
 
-        elif postback_data.startswith("選擇_side_"):
+        elif postback_data.startswith("side_"):
             selected_side = postback_data.replace("side_", "")
             user_cart[user_id]["current_item"]["配料"].append(selected_side)
             send_drink_menu(event)
             return
 
-        elif postback_data.startswith("選擇_飲料_"):
-            selected_drink = postback_data.replace("選擇_飲料_", "")
+        elif postback_data.startswith("drink_"):
+            selected_drink = postback_data.replace("drink_", "")
             user_cart[user_id]["current_item"]["飲料"] = selected_drink
             send_quantity_menu(event)
             return
