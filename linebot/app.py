@@ -361,20 +361,6 @@ def checkout_order(event, user_id):
 
     
 
-        # 折扣处理
-        discount = 0.9 if total >= 200 else 1.0
-        final_price = int(total * discount)
-        reply_text = (
-            f"你的訂單如下：\n{order_details}"
-            f"總金額：{total} 元\n折扣後金額：{final_price} 元\n"
-            f"請使用以下 Line Pay 付款連結：\nhttps://pay.line.me/123456789"
-        )
-
-        # 清空購物車
-        user_cart[user_id]["items"] = []
-
-    line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=reply_text)])
-
 
 
 
