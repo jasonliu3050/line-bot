@@ -103,9 +103,9 @@ def send_menu(event):
                 title="Taco",
                 text="請選擇 Taco 作為主餐",
                 actions=[
-                    PostbackAction(label="豬肉Taco", data="選擇_塔可豬肉Taco"),
-                    PostbackAction(label="雞肉Taco", data="選擇_塔可雞肉Taco"),
-                    PostbackAction(label="牛肉Taco", data="選擇_塔可牛肉Taco"),
+                    PostbackAction(label="豬肉Taco", data="選擇_塔可豬肉"),
+                    PostbackAction(label="雞肉Taco", data="選擇_塔可雞肉"),
+                    PostbackAction(label="牛肉Taco", data="選擇_塔可牛肉"),
                 ]
             ),
             CarouselColumn(
@@ -113,9 +113,9 @@ def send_menu(event):
                 title="Taco Bowl",
                 text="請選擇 Taco Bowl 作為主餐",
                 actions=[
-                    PostbackAction(label="豬肉TacoBowl", data="選擇_塔可豬肉TacoBowl"),
-                    PostbackAction(label="雞肉TacoBowl", data="選擇_塔可雞肉TacoBowl"),
-                    PostbackAction(label="牛肉TacoBowl", data="選擇_塔可牛肉TacoBowl"),
+                    PostbackAction(label="豬肉TacoBowl", data="選擇_塔可豬肉"),
+                    PostbackAction(label="雞肉TacoBowl", data="選擇_塔可雞肉"),
+                    PostbackAction(label="牛肉TacoBowl", data="選擇_塔可牛肉"),
                 ]
             )
         ])
@@ -167,7 +167,7 @@ def handle_postback(event):
 
         elif postback_data.startswith("選擇_套餐"):
             user_cart[user_id]["current_item"]["套餐"] = True
-            send_side_and_drink_menu(event)
+            send_side_menu(event)
             return
 
         elif postback_data.startswith("選擇_Side_"):
@@ -195,23 +195,36 @@ def send_quantity_menu(event):
         print(f"[ERROR] 發送數量請求時出現錯誤: {e}")
 
 
-@handler.add(MessageEvent)
-def handle_message(event):
+def send_side_menu(event):
+   
+    print("[DEBUG] 發送")  # DEBUG LOG
+
     try:
-        user_id = event.source.user_id
-        user_message = event.message.text.strip()
+        carousel_template = CarouselTemplate(columns=[
+            CarouselColumn(
+                thumbnail_image_url="https://i.imgur.com/MAnWCCx.jpeg",
+                title="side",
+                text="請選擇 Taco 作為主餐",
+                actions=[
+                    PostbackAction(label="玉米脆片", data="side_玉米脆片"),
+                    PostbackAction(label="墨西哥風味飯", data="side_墨西哥風味飯"),
+                    PostbackAction(label="無", data="side_無"),
+                ]
+            )
+        ])
 
-        if user_id in user_cart and user_cart[user_id]["current_item"] and user_message.isdigit():
-            selected_quantity = int(user_message)
-            user_cart[user_id]["current_item"]["數量"] = selected_quantity
-            user_cart[user_id]["items"].append(user_cart[user_id]["current_item"])
-            user_cart[user_id]["current_item"] = None
-            ask_if_need_more(event)
-        else:
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="請輸入有效的數字！")])
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TemplateSendMessage(alt_text="請選擇side", template=carousel_template)]
+        )
+        print("[DEBUG] side發送成功")
+
     except Exception as e:
-        print(f"[ERROR] 處理數量輸入時出現錯誤: {e}")
-
+        print(f"[ERROR] 發送side時發生錯誤: {e}")
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextSendMessage(text="發送side時發生錯誤，請稍後再試！")]
+        )
 
 
 
